@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: Librería AYD — Microservicio de Ventas
+  version: 1.0.0
+  description: |
+    Registro de transacciones de venta y ranking de los libros más vendidos.
+    Para registrar una venta, este servicio consulta y descuenta existencias en el
+    microservicio de Libros (ver ADR-004).
+servers:
+  - url: http://localhost:8080
+    description: A través de la API Gateway (local)
+  - url: http://localhost:3002
+    description: Directo al servicio (solo desarrollo)
+tags:
+  - name: Ventas
+  - name: Ranking
+  - name: Salud
+
+paths:
+  /api/v1/ventas:
+    get:
+      tags: [Ventas]
+      summary: Historial de ventas paginado (más recientes primero)
+      operationId: listarVentas
+      security: [{ AdminApiKey: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+        - name: libroId
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: pagina
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limite
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: Página de ventas
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Venta' }
+                  meta: { $ref: '#/components/schemas/MetaPaginacion' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+    post:
+      tags: [Ventas]
+      summary: Registra una venta y descuenta existencias
+      operationId: registrarVenta
+      security: [{ AdminApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VentaEntrada' }
+            example: { libroId: 7, cantidad: 2 }
+      responses:
+        '201':
+          description: Venta registrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Venta' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404':
+          description: El libro no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Existencias insuficientes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '503':
+          description: El microservicio de Libros no está disponible
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/v1/ventas/{id}:
+    get:
+      tags: [Ventas]
+      summary: Obtiene una venta
+      operationId: obtenerVenta
+      security: [{ AdminApiKey: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Venta encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Venta' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404':
+          description: La venta no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/v1/ventas/ranking:
+    get:
+      tags: [Ranking]
+      summary: Ranking de los libros más vendidos
+      description: |
+        Agrupa las ventas por libro y ordena por unidades vendidas (desc), monto total (desc)
+        y título (asc). Es público: no requiere llave de administración.
+      operationId: obtenerRanking
+      parameters:
+        - name: limite
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+      responses:
+        '200':
+          description: Ranking calculado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/PosicionRanking' }
+                  meta:
+                    type: object
+                    properties:
+                      limite: { type: integer, example: 10 }
+                      desde: { type: string, format: date-time, nullable: true }
+                      hasta: { type: string, format: date-time, nullable: true }
+                      generadoEn: { type: string, format: date-time }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+
+  /health:
+    get:
+      tags: [Salud]
+      summary: Estado del servicio y de su base de datos
+      operationId: salud
+      responses:
+        '200':
+          description: Servicio saludable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Salud' }
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Salud' }
+
+components:
+  securitySchemes:
+    AdminApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Validada por la API Gateway; el microservicio no la recibe.
+
+  parameters:
+    Desde:
+      name: desde
+      in: query
+      description: Fecha inicial inclusiva (ISO 8601, p. ej. `2026-10-01` o `2026-10-01T00:00:00Z`).
+      schema: { type: string, format: date-time }
+    Hasta:
+      name: hasta
+      in: query
+      description: Fecha final exclusiva (ISO 8601).
+      schema: { type: string, format: date-time }
+
+  schemas:
+    VentaEntrada:
+      type: object
+      required: [libroId, cantidad]
+      additionalProperties: false
+      properties:
+        libroId: { type: integer, minimum: 1 }
+        cantidad: { type: integer, minimum: 1, maximum: 1000 }
+
+    Venta:
+      type: object
+      required: [id, libroId, titulo, autor, cantidad, precioUnitario, total, fecha]
+      properties:
+        id: { type: integer, example: 31 }
+        libroId: { type: integer, example: 7 }
+        titulo: { type: string, example: Cien años de soledad }
+        autor: { type: string, example: Gabriel García Márquez }
+        cantidad: { type: integer, example: 2 }
+        precioUnitario: { type: number, format: double, example: 189.5 }
+        total: { type: number, format: double, example: 379 }
+        fecha: { type: string, format: date-time }
+
+    PosicionRanking:
+      type: object
+      required: [posicion, libroId, titulo, autor, unidadesVendidas, montoTotal]
+      properties:
+        posicion: { type: integer, example: 1 }
+        libroId: { type: integer, example: 7 }
+        titulo: { type: string, example: Cien años de soledad }
+        autor: { type: string, example: Gabriel García Márquez }
+        unidadesVendidas: { type: integer, example: 42 }
+        montoTotal: { type: number, format: double, example: 7959 }
+
+    MetaPaginacion:
+      type: object
+      required: [pagina, limite, total, totalPaginas]
+      properties:
+        pagina: { type: integer }
+        limite: { type: integer }
+        total: { type: integer }
+        totalPaginas: { type: integer }
+
+    Salud:
+      type: object
+      properties:
+        estado: { type: string, enum: [ok, degradado] }
+        servicio: { type: string, example: ventas }
+        version: { type: string, example: 1.0.0 }
+        baseDeDatos: { type: string, enum: [ok, error] }
+        tiempoActivo: { type: number }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [codigo, mensaje]
+          properties:
+            codigo: { type: string }
+            mensaje: { type: string }
+            detalles: {}
+            requestId: { type: string }
+
+  responses:
+    ErrorValidacion:
+      description: Datos de entrada inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoAutorizado:
+      description: Falta la llave de administración o es incorrecta (respondido por la API Gateway)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

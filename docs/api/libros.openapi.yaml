@@ -1,0 +1,344 @@
+openapi: 3.0.3
+info:
+  title: Librería AYD — Microservicio de Libros
+  version: 1.0.0
+  description: |
+    Catálogo de libros: consulta, búsqueda, filtrado y administración de existencias.
+    Las rutas `/internal/v1/*` solo son accesibles desde el microservicio de Ventas.
+servers:
+  - url: http://localhost:8080
+    description: A través de la API Gateway (local)
+  - url: http://localhost:3001
+    description: Directo al servicio (solo desarrollo)
+tags:
+  - name: Catálogo
+  - name: Administración
+  - name: Interno
+  - name: Salud
+
+paths:
+  /api/v1/libros:
+    get:
+      tags: [Catálogo]
+      summary: Lista, busca y filtra libros
+      operationId: listarLibros
+      parameters:
+        - name: q
+          in: query
+          description: Texto a buscar en título o autor (coincidencia parcial, sin distinguir mayúsculas ni tildes).
+          schema: { type: string, maxLength: 100 }
+        - name: autor
+          in: query
+          description: Filtra por autor (coincidencia parcial).
+          schema: { type: string, maxLength: 100 }
+        - name: precioMin
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: precioMax
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: disponibles
+          in: query
+          description: Si es `true`, solo devuelve libros con existencias mayores a cero.
+          schema: { type: boolean }
+        - name: orden
+          in: query
+          schema:
+            type: string
+            enum: [titulo, -titulo, autor, -autor, precio, -precio]
+            default: titulo
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/Limite'
+      responses:
+        '200':
+          description: Página de libros
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, meta]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Libro' }
+                  meta: { $ref: '#/components/schemas/MetaPaginacion' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+    post:
+      tags: [Administración]
+      summary: Registra un libro
+      operationId: crearLibro
+      security: [{ AdminApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LibroEntrada' }
+      responses:
+        '201':
+          description: Libro creado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Libro' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /api/v1/libros/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdLibro'
+    get:
+      tags: [Catálogo]
+      summary: Obtiene el detalle de un libro
+      operationId: obtenerLibro
+      responses:
+        '200':
+          description: Libro encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Libro' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Administración]
+      summary: Actualiza todos los datos de un libro
+      operationId: actualizarLibro
+      security: [{ AdminApiKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LibroEntrada' }
+      responses:
+        '200':
+          description: Libro actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Libro' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+    delete:
+      tags: [Administración]
+      summary: Elimina un libro
+      operationId: eliminarLibro
+      security: [{ AdminApiKey: [] }]
+      responses:
+        '204': { description: Libro eliminado }
+        '401': { $ref: '#/components/responses/NoAutorizado' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/v1/libros/autores:
+    get:
+      tags: [Catálogo]
+      summary: Lista los autores distintos del catálogo (para el filtro del frontend)
+      operationId: listarAutores
+      responses:
+        '200':
+          description: Autores ordenados alfabéticamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { type: string }
+                    example: [Gabriel García Márquez, Isabel Allende]
+
+  /internal/v1/libros/{id}/descontar:
+    parameters:
+      - $ref: '#/components/parameters/IdLibro'
+    post:
+      tags: [Interno]
+      summary: Descuenta existencias de forma atómica (usado por Ventas)
+      operationId: descontarExistencias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MovimientoExistencias' }
+      responses:
+        '200':
+          description: Existencias actualizadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Libro' }
+        '400': { $ref: '#/components/responses/ErrorValidacion' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: Existencias insuficientes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+              example:
+                error:
+                  codigo: EXISTENCIAS_INSUFICIENTES
+                  mensaje: Solo hay 2 unidades disponibles de "Rayuela".
+                  detalles: { disponibles: 2, solicitadas: 5 }
+                  requestId: 9b7c1f3e-0f5a-4f5e-8f0a-2c1d3e4f5a6b
+
+  /internal/v1/libros/{id}/reponer:
+    parameters:
+      - $ref: '#/components/parameters/IdLibro'
+    post:
+      tags: [Interno]
+      summary: Repone existencias (compensación de una venta fallida)
+      operationId: reponerExistencias
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MovimientoExistencias' }
+      responses:
+        '200':
+          description: Existencias actualizadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Libro' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /health:
+    get:
+      tags: [Salud]
+      summary: Estado del servicio y de su base de datos
+      operationId: salud
+      responses:
+        '200':
+          description: Servicio saludable
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Salud' }
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Salud' }
+
+components:
+  securitySchemes:
+    AdminApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: Validada por la API Gateway; el microservicio no la recibe.
+
+  parameters:
+    IdLibro:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Pagina:
+      name: pagina
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Limite:
+      name: limite
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+
+  schemas:
+    Libro:
+      type: object
+      required: [id, titulo, autor, precio, existencias]
+      properties:
+        id: { type: integer, example: 7 }
+        isbn: { type: string, nullable: true, pattern: '^\d{13}$', example: '9788437604572' }
+        titulo: { type: string, example: Cien años de soledad }
+        autor: { type: string, example: Gabriel García Márquez }
+        precio: { type: number, format: double, example: 189.5 }
+        existencias: { type: integer, example: 12 }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
+
+    LibroEntrada:
+      type: object
+      required: [titulo, autor, precio, existencias]
+      additionalProperties: false
+      properties:
+        isbn: { type: string, nullable: true, pattern: '^\d{13}$' }
+        titulo: { type: string, minLength: 1, maxLength: 200 }
+        autor: { type: string, minLength: 1, maxLength: 150 }
+        precio: { type: number, exclusiveMinimum: true, minimum: 0, maximum: 99999.99 }
+        existencias: { type: integer, minimum: 0, maximum: 100000 }
+
+    MovimientoExistencias:
+      type: object
+      required: [cantidad]
+      properties:
+        cantidad: { type: integer, minimum: 1, maximum: 1000 }
+
+    MetaPaginacion:
+      type: object
+      required: [pagina, limite, total, totalPaginas]
+      properties:
+        pagina: { type: integer, example: 1 }
+        limite: { type: integer, example: 20 }
+        total: { type: integer, example: 57 }
+        totalPaginas: { type: integer, example: 3 }
+
+    Salud:
+      type: object
+      properties:
+        estado: { type: string, enum: [ok, degradado] }
+        servicio: { type: string, example: libros }
+        version: { type: string, example: 1.0.0 }
+        baseDeDatos: { type: string, enum: [ok, error] }
+        tiempoActivo: { type: number, description: Segundos desde el arranque }
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [codigo, mensaje]
+          properties:
+            codigo: { type: string, example: VALIDACION }
+            mensaje: { type: string }
+            detalles: {}
+            requestId: { type: string }
+
+  responses:
+    ErrorValidacion:
+      description: Datos de entrada inválidos
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          example:
+            error:
+              codigo: VALIDACION
+              mensaje: Los datos enviados no son válidos.
+              detalles:
+                - campo: precio
+                  mensaje: Debe ser mayor a 0.
+    NoAutorizado:
+      description: Falta la llave de administración o es incorrecta (respondido por la API Gateway)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NoEncontrado:
+      description: El libro no existe
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflicto:
+      description: ISBN duplicado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
