@@ -24,6 +24,8 @@ La fuente UML estricta (nodos, entornos de ejecución y artefactos con estereoti
 [`docs/diagramas/despliegue.puml`](../diagramas/despliegue.puml). La siguiente versión en
 Mermaid se renderiza directamente en GitHub.
 
+![Diagrama UML de despliegue](../diagramas/despliegue.svg)
+
 ```mermaid
 flowchart TB
     USR["«device»<br/>Navegador del usuario"]
