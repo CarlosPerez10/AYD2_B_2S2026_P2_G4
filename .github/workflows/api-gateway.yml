@@ -1,0 +1,54 @@
+name: api-gateway
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "api-gateway/**"
+      - ".github/workflows/api-gateway.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-gateway
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api-gateway/package-lock.json
+
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run test:coverage
+
+  imagen:
+    runs-on: ubuntu-latest
+    needs: pruebas
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construye la imagen
+        run: docker build -t libreria-ayd/api-gateway:${{ github.sha }} api-gateway
+      - name: Verifica que el contenedor arranque sano
+        run: |
+          docker run -d --name gateway -p 8080:8080 \
+            -e ADMIN_API_KEY=llave-de-integracion-continua \
+            libreria-ayd/api-gateway:${{ github.sha }}
+          for intento in $(seq 1 15); do
+            if curl -fsS http://localhost:8080/health; then exit 0; fi
+            sleep 2
+          done
+          docker logs gateway
+          exit 1
