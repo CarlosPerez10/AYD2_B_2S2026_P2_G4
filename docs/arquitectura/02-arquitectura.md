@@ -235,3 +235,34 @@ sequenceDiagram
 El flujo usa una **saga orquestada simple**: Ventas coordina los pasos y, si el último falla,
 ejecuta la acción compensatoria (reponer existencias). Así cada servicio mantiene su
 propia base de datos sin transacciones distribuidas.
+
+## 7. Aspectos transversales
+
+| Aspecto | Decisión |
+|---------|----------|
+| Formato de errores | Todos los servicios responden `{"error": {"codigo", "mensaje", "detalles", "requestId"}}`. |
+| Trazabilidad | El gateway genera o respeta `X-Request-Id` y lo reenvía; cada servicio lo incluye en sus logs y en la respuesta. |
+| Logs | JSON en una línea por evento (fecha, nivel, servicio, requestId, método, ruta, estado, duración). |
+| Salud | `GET /health` en cada componente (proceso vivo + conexión a BD). El gateway expone `GET /health/servicios` con el estado agregado. |
+| Configuración | Solo variables de entorno, validadas al arrancar ([12-Factor](https://12factor.net/es/config)). |
+| Versionado de API | Prefijo `/api/v1`. Un cambio incompatible crea `/api/v2` sin romper al frontend. |
+| Seguridad | Llave de administración en el gateway para operaciones de escritura; servicios y bases sin acceso público; SQL siempre parametrizado; cabeceras de seguridad con Helmet. |
+| Apagado ordenado | Al recibir `SIGTERM` cada servicio deja de aceptar conexiones, termina las peticiones en curso y cierra el pool de BD. |
+
+## 8. Pila tecnológica
+
+| Capa | Tecnología | Justificación |
+|------|-----------|---------------|
+| Frontend | React 18 + Vite, Nginx | SPA ligera; Nginx sirve estáticos y resuelve rutas del cliente. |
+| Gateway | Node.js 22 + Express + http-proxy-middleware | Proxy en *streaming*, fácil de extender con middlewares propios. |
+| Microservicios | Node.js 22 + Express + `pg` | Mismo lenguaje en todo el backend; SQL explícito sin ORM. |
+| Base de datos | PostgreSQL 16 en Amazon RDS | Base gestionada con respaldos automáticos y escalado vertical. |
+| Contenedores | Docker, imágenes multi-etapa sobre Alpine | Imágenes pequeñas, usuario no root. |
+| Registro | Amazon ECR | Integrado con IAM de las VMs. |
+| IaC | Terraform ≥ 1.6, proveedor AWS 5.x | Infraestructura declarativa y reproducible. |
+| Configuración | Ansible ≥ 2.15 | Sin agentes; idempotente. |
+| Pruebas | `node:test` + Supertest | Ejecutor nativo de Node, sin dependencias pesadas. |
+
+## 9. Decisiones de arquitectura
+
+Las decisiones relevantes están registradas en [`adr/`](adr/).
