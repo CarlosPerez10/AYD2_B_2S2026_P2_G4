@@ -284,3 +284,43 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | RES-07 | Una base de datos independiente por microservicio. | Enunciado / patrón |
 | RES-08 | Documentación en Markdown dentro del repositorio. | Enunciado |
 | RES-09 | Fecha de entrega: 22 de octubre de 2026. | Cronograma |
+
+## 9. Matrices de trazabilidad
+
+### 9.1 Casos de uso ↔ requisitos funcionales
+
+| CU \ RF | RF-01 | RF-02 | RF-03 | RF-04 | RF-05 | RF-06 | RF-07 | RF-08 | RF-09 | RF-10 | RF-11 |
+|---------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+| CU-01 | ● | ● | | | | | | | | | |
+| CU-02 | | | ● | ● | | | | | | | |
+| CU-03 | | | | | ● | | | | | | |
+| CU-04 | | | | | | | | | ● | ● | |
+| CU-05 | | | | | | ● | | | | | |
+| CU-06 | | | | | | ● | | | | | |
+| CU-07 | | | | | | ● | | | | | |
+| CU-08 | | | | | | | ● | ● | | | |
+| CU-09 | | | | | | | | | | | ● |
+
+### 9.2 Requisitos ↔ componentes
+
+| Requisito | Frontend | API Gateway | Libros | Ventas | RDS | Terraform | Ansible |
+|-----------|:--------:|:-----------:|:------:|:------:|:---:|:---------:|:-------:|
+| RF-01 – RF-05 | ● | ● | ● | | ● | | |
+| RF-06 | ● | ● | ● | | ● | | |
+| RF-07, RF-08 | ● | ● | ● | ● | ● | | |
+| RF-09 – RF-11 | ● | ● | | ● | ● | | |
+| RNF-01 | | ● | ● | ● | | ● | ● |
+| RNF-04 | | ● | | | ● | ● | |
+| RNF-05 | | | ● | ● | ● | | |
+| RNF-07 | | | | | | ● | ● |
+| RNF-08 | | ● | ● | ● | | | |
+
+### 9.3 Componentes ↔ responsables
+
+| Componente | Responsable | Carnet |
+|------------|-------------|--------|
+| Arquitectura, contratos, API Gateway, integración | Carlos Javier Pérez Pocón | 202206425 |
+| Microservicio de Libros | Luis Fernando González | 202307727 |
+| Microservicio de Ventas | Eduardo Misael López Ávila | 202100147 |
+| Frontend y manual de usuario | Kevin Mark Hernández Chicol | 202001053 |
+| Terraform, Ansible, ECR, despliegue | Billy James Asael Chamale Sánchez | 201907502 |
