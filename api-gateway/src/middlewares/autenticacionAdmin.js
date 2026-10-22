@@ -28,7 +28,10 @@ export function autenticacionAdmin(llaveAdmin) {
   const esperada = resumen(llaveAdmin);
 
   return (req, res, next) => {
-    if (!requiereAdmin(req.method, req.path)) return next();
+    // Montado con app.use('/api', ...), Express quita el prefijo de req.path;
+    // la política se evalúa sobre la ruta completa.
+    const ruta = req.baseUrl + req.path;
+    if (!requiereAdmin(req.method, ruta)) return next();
 
     const recibida = req.get('x-api-key');
     if (!recibida || !timingSafeEqual(resumen(recibida), esperada)) {
