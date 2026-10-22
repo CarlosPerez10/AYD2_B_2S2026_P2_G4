@@ -134,6 +134,6 @@ Todos los componentes responden errores con la misma forma:
 | 413 | `CUERPO_DEMASIADO_GRANDE` | Servicios | Cuerpo mayor a 100 KB. |
 | 429 | `DEMASIADAS_PETICIONES` | Gateway | Se superó el límite por IP (por defecto 300 por minuto). |
 | 500 | `ERROR_INTERNO` | Todos | Error no controlado. El mensaje nunca expone detalles internos. |
-| 502 | `SERVICIO_NO_DISPONIBLE` | Gateway | El microservicio rechazó la conexión. |
-| 503 | `SERVICIO_NO_DISPONIBLE` | Gateway / Ventas | Microservicio o dependencia caída. |
+| 502 | `RESPUESTA_INVALIDA` | Gateway | La conexión con el microservicio se cortó o devolvió una respuesta inválida. |
+| 503 | `SERVICIO_NO_DISPONIBLE` | Gateway / Ventas | El microservicio o una dependencia rechaza conexiones o no se puede resolver. |
 | 504 | `TIEMPO_AGOTADO` | Gateway | El microservicio no respondió dentro del tiempo límite. |
