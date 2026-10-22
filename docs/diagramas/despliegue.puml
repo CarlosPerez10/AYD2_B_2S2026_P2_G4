@@ -1,0 +1,90 @@
+@startuml despliegue
+' Diagrama UML de despliegue — Librería AYD (Práctica 2, Grupo 4)
+' Renderizar con: java -jar plantuml.jar -tsvg docs/diagramas/despliegue.puml
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam nodeBackgroundColor #FDFDFD
+skinparam artifactBackgroundColor #EEF4FF
+skinparam databaseBackgroundColor #FFF6E5
+skinparam ArrowColor #333333
+left to right direction
+
+node "Navegador del usuario" as browser <<device>>
+
+node "Equipo del operador" as ops <<device>> {
+  node "Terraform ≥ 1.6" as terraform <<executionEnvironment>> {
+    artifact "infra/terraform/*.tf" as tfcode
+  }
+  node "Ansible ≥ 2.15" as ansible <<executionEnvironment>> {
+    artifact "infra/ansible/site.yml" as playbook
+  }
+}
+
+cloud "AWS · us-east-1" as aws {
+
+  node "Amazon ECR" as ecr <<artifact repository>> {
+    artifact "frontend:1.x" as img_fe
+    artifact "api-gateway:1.x" as img_gw
+    artifact "libros:1.x" as img_lib
+    artifact "ventas:1.x" as img_ven
+  }
+
+  node "VPC 10.0.0.0/16" as vpc <<network>> {
+
+    node "Application Load Balancer" as alb <<device>> {
+      artifact "listener :80" as listener
+    }
+
+    node "Subredes públicas\n10.0.1.0/24 · 10.0.2.0/24" as pub <<subnet>> {
+
+      node "EC2 frontend\nUbuntu 24.04 · t3.micro\nIP elástica" as ec2_fe <<device>> {
+        node "Docker Engine" as dk_fe <<executionEnvironment>> {
+          artifact "frontend\nNginx :80" as c_fe <<container>>
+          artifact "api-gateway\nNode.js :8080" as c_gw <<container>>
+        }
+      }
+
+      node "EC2 libros\nUbuntu 24.04 · t3.micro\nIP elástica" as ec2_lib <<device>> {
+        node "Docker Engine" as dk_lib <<executionEnvironment>> {
+          artifact "libros\nNode.js :3001" as c_lib <<container>>
+        }
+      }
+
+      node "EC2 ventas\nUbuntu 24.04 · t3.micro\nIP elástica" as ec2_ven <<device>> {
+        node "Docker Engine" as dk_ven <<executionEnvironment>> {
+          artifact "ventas\nNode.js :3002" as c_ven <<container>>
+        }
+      }
+    }
+
+    node "Subredes privadas\n10.0.11.0/24 · 10.0.12.0/24" as priv <<subnet>> {
+      database "RDS PostgreSQL 16\nlibros_db" as rds_lib <<device>>
+      database "RDS PostgreSQL 16\nventas_db" as rds_ven <<device>>
+    }
+  }
+}
+
+' Tráfico de la aplicación
+browser --> listener : HTTP :80
+listener --> c_fe : "/*  HTTP :80"
+listener --> c_gw : "/api/*, /health*  HTTP :8080"
+c_gw --> c_lib : HTTP :3001
+c_gw --> c_ven : HTTP :3002
+c_ven --> c_lib : HTTP :3001\n/internal/v1
+c_lib --> rds_lib : TCP :5432 TLS
+c_ven --> rds_ven : TCP :5432 TLS
+
+' Aprovisionamiento y despliegue
+terraform ..> aws : <<provisiona>>\nAPI de AWS
+ansible ..> ec2_fe : <<configura/despliega>>\nSSH :22
+ansible ..> ec2_lib : <<configura/despliega>>\nSSH :22
+ansible ..> ec2_ven : <<configura/despliega>>\nSSH :22
+
+' Descarga de imágenes
+img_fe ..> c_fe : <<deploy>>
+img_gw ..> c_gw : <<deploy>>
+img_lib ..> c_lib : <<deploy>>
+img_ven ..> c_ven : <<deploy>>
+
+@enduml
