@@ -239,3 +239,48 @@ flowchart LR
 - 5a. Existencias insuficientes: responde `409` y no se guarda la venta.
 - 6a. Falla al guardar la venta después de descontar: Ventas ejecuta la compensación (devuelve las existencias a Libros) y responde `500`.
 - 3b. Libros no responde: responde `503` y no se guarda la venta.
+
+## 6. Requisitos funcionales
+
+| ID | Requisito | Prioridad |
+|----|-----------|-----------|
+| RF-01 | Listar los libros con título, autor, precio y existencias. | Alta |
+| RF-02 | Paginar y ordenar el listado (por título, autor o precio). | Media |
+| RF-03 | Buscar libros por coincidencia parcial en título o autor. | Alta |
+| RF-04 | Filtrar libros por autor, rango de precio y disponibilidad. | Alta |
+| RF-05 | Consultar el detalle de un libro. | Media |
+| RF-06 | Crear, actualizar y eliminar libros (solo administrador). | Alta |
+| RF-07 | Registrar ventas con libro, cantidad y fecha (solo administrador). | Alta |
+| RF-08 | Descontar existencias al registrar una venta y rechazarla si no alcanzan. | Alta |
+| RF-09 | Calcular el ranking de libros más vendidos a partir del historial. | Alta |
+| RF-10 | Filtrar el ranking por rango de fechas y limitar el número de resultados. | Media |
+| RF-11 | Consultar el historial de ventas paginado (solo administrador). | Media |
+
+## 7. Drivers de atributos de calidad
+
+Cada atributo se expresa como un escenario: **estímulo → respuesta → medida**.
+
+| ID | Atributo | Escenario | Medida | Táctica aplicada |
+|----|----------|-----------|--------|------------------|
+| RNF-01 | Disponibilidad | Un contenedor de un microservicio se detiene inesperadamente. | Docker lo reinicia en menos de 30 s; el ALB deja de enviarle tráfico mientras su *health check* falla. | Política `restart: unless-stopped`, *health checks* en ALB y en contenedores. |
+| RNF-02 | Rendimiento | Un cliente busca un libro con 50 usuarios concurrentes. | El percentil 95 de respuesta es menor a 500 ms. | Índices de búsqueda en PostgreSQL, paginación obligatoria, compresión gzip en gateway. |
+| RNF-03 | Escalabilidad | Aumenta el tráfico en el catálogo. | Se puede agregar otra instancia de Libros detrás del gateway sin cambiar código, y escalar RDS verticalmente. | Servicios sin estado, configuración por variables de entorno, base de datos gestionada. |
+| RNF-04 | Seguridad | Un usuario sin llave intenta crear un libro o una venta. | La API Gateway responde `401` y la petición nunca llega al microservicio. | Autenticación en el borde, grupos de seguridad que solo permiten tráfico interno a los microservicios, bases de datos en subred privada. |
+| RNF-05 | Consistencia | Dos ventas simultáneas compiten por la última unidad de un libro. | Solo una se registra; la otra recibe `409`. | Descuento atómico (`UPDATE ... WHERE existencias >= cantidad`) y compensación ante fallos. |
+| RNF-06 | Mantenibilidad | Se necesita cambiar la base de datos de un servicio. | El cambio se limita a la capa de acceso a datos de ese servicio. | Arquitectura por capas, base de datos por servicio, contratos OpenAPI. |
+| RNF-07 | Portabilidad / reproducibilidad | Se necesita recrear el entorno desde cero. | `terraform apply` + `ansible-playbook` levantan todo sin pasos manuales en menos de 30 min. | Infraestructura como código, imágenes Docker versionadas en ECR. |
+| RNF-08 | Observabilidad | Un error ocurre en una petición que pasa por varios servicios. | Se puede rastrear con un único identificador en los logs de todos los servicios. | Encabezado `X-Request-Id` propagado por el gateway, logs estructurados en JSON. |
+
+## 8. Drivers de restricción
+
+| ID | Restricción | Origen |
+|----|-------------|--------|
+| RES-01 | Patrón de microservicios sobre arquitectura por capas, con dos servicios: Libros y Ventas. | Enunciado |
+| RES-02 | API Gateway como punto de entrada único. | Enunciado |
+| RES-03 | Infraestructura definida con Terraform: red, máquinas virtuales, IP públicas estáticas, balanceador y bases de datos gestionadas. | Enunciado |
+| RES-04 | Configuración de sistema operativo, instalación de Docker Engine y despliegue con Ansible. | Enunciado |
+| RES-05 | Todos los componentes en contenedores Docker publicados en un registro en la nube. | Enunciado |
+| RES-06 | Nube pública: AWS. | Decisión del equipo |
+| RES-07 | Una base de datos independiente por microservicio. | Enunciado / patrón |
+| RES-08 | Documentación en Markdown dentro del repositorio. | Enunciado |
+| RES-09 | Fecha de entrega: 22 de octubre de 2026. | Cronograma |
