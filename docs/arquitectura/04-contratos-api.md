@@ -126,6 +126,7 @@ Todos los componentes responden errores con la misma forma:
 
 | HTTP | `codigo` | Emisor | Cuándo |
 |------|----------|--------|--------|
+| 400 | `RUTA_INVALIDA` | Gateway | La ruta contiene `..`, `//`, `\` o caracteres de ruta codificados. |
 | 400 | `VALIDACION` | Servicios | Parámetros o cuerpo inválidos. `detalles` lista `{campo, mensaje}`. |
 | 401 | `NO_AUTORIZADO` | Gateway | Falta `X-Api-Key` o es incorrecta. |
 | 404 | `NO_ENCONTRADO` | Todos | Recurso o ruta inexistente. |

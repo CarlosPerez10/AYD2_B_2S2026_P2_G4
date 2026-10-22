@@ -254,7 +254,7 @@ propia base de datos sin transacciones distribuidas.
 | Capa | Tecnología | Justificación |
 |------|-----------|---------------|
 | Frontend | React 18 + Vite, Nginx | SPA ligera; Nginx sirve estáticos y resuelve rutas del cliente. |
-| Gateway | Node.js 22 + Express + http-proxy-middleware | Proxy en *streaming*, fácil de extender con middlewares propios. |
+| Gateway | Node.js 22 + Express, proxy sobre `node:http` | Proxy en *streaming* sin dependencias extra, fácil de extender con middlewares propios. |
 | Microservicios | Node.js 22 + Express + `pg` | Mismo lenguaje en todo el backend; SQL explícito sin ORM. |
 | Base de datos | PostgreSQL 16 en Amazon RDS | Base gestionada con respaldos automáticos y escalado vertical. |
 | Contenedores | Docker, imágenes multi-etapa sobre Alpine | Imágenes pequeñas, usuario no root. |
