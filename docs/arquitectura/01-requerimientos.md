@@ -43,3 +43,66 @@ los libros más vendidos que se actualice a partir de las transacciones registra
 
 El **Administrador** es una especialización del **Cliente**: puede hacer todo lo que hace un
 cliente y además las tareas de gestión.
+
+## 4. Casos de uso de alto nivel
+
+### 4.1 Core del sistema
+
+```mermaid
+flowchart LR
+    C([Cliente])
+    A([Administrador])
+    subgraph SIS[Librería AYD]
+        CU1((Consultar<br/>catálogo))
+        CU2((Gestionar<br/>catálogo))
+        CU3((Gestionar<br/>ventas))
+    end
+    C --- CU1
+    A --- CU1
+    A --- CU2
+    A --- CU3
+    A -. «generaliza» .-> C
+```
+
+### 4.2 Primera descomposición
+
+```mermaid
+flowchart LR
+    C([Cliente])
+    A([Administrador])
+    subgraph SIS[Librería AYD]
+        CU01((CU-01 Listar<br/>libros))
+        CU02((CU-02 Buscar y<br/>filtrar libros))
+        CU03((CU-03 Ver detalle<br/>de libro))
+        CU04((CU-04 Consultar<br/>ranking))
+        CU05((CU-05 Registrar<br/>libro))
+        CU06((CU-06 Actualizar<br/>libro))
+        CU07((CU-07 Eliminar<br/>libro))
+        CU08((CU-08 Registrar<br/>venta))
+        CU09((CU-09 Consultar<br/>historial de ventas))
+        CU10((Validar<br/>existencias))
+    end
+    C --- CU01
+    C --- CU02
+    C --- CU03
+    C --- CU04
+    A --- CU05
+    A --- CU06
+    A --- CU07
+    A --- CU08
+    A --- CU09
+    CU02 -. «extend» .-> CU01
+    CU08 -. «include» .-> CU10
+```
+
+| Código | Caso de uso | Actor | Microservicio |
+|--------|-------------|-------|---------------|
+| CU-01 | Listar libros | Cliente, Administrador | Libros |
+| CU-02 | Buscar y filtrar libros | Cliente, Administrador | Libros |
+| CU-03 | Ver detalle de libro | Cliente, Administrador | Libros |
+| CU-04 | Consultar ranking de más vendidos | Cliente, Administrador | Ventas |
+| CU-05 | Registrar libro | Administrador | Libros |
+| CU-06 | Actualizar libro | Administrador | Libros |
+| CU-07 | Eliminar libro | Administrador | Libros |
+| CU-08 | Registrar venta | Administrador | Ventas (+ Libros) |
+| CU-09 | Consultar historial de ventas | Administrador | Ventas |
