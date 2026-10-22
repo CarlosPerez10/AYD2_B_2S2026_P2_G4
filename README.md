@@ -78,6 +78,26 @@ docker compose up --build
 | http://localhost:8080/health | API Gateway |
 | http://localhost:8080/health/servicios | Estado agregado de los microservicios |
 
+Los puertos publicados se cambian con `GATEWAY_PORT` y `FRONTEND_PORT` en `.env`, por si ya
+están ocupados en el equipo.
+
+Para levantar un componente aislado mientras los demás siguen en desarrollo:
+
+```bash
+docker compose up --build --no-deps api-gateway
+```
+
+### Variables que consume cada microservicio
+
+`docker-compose.yml` es también el contrato de configuración entre componentes:
+
+| Servicio | Variables |
+|----------|-----------|
+| `libros` | `PORT`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`, `LOG_LEVEL` |
+| `ventas` | Las mismas de base de datos, más `LIBROS_SERVICE_URL` |
+| `api-gateway` | Ver [`api-gateway/README.md`](api-gateway/README.md#variables-de-entorno) |
+| `frontend` | Usa rutas relativas `/api/v1/...`; Nginx reenvía `/api/` a `api-gateway:8080` en local y el ALB lo hace en AWS |
+
 ## Flujo de trabajo
 
 - `main`: releases estables etiquetados (`vX.Y.Z`).

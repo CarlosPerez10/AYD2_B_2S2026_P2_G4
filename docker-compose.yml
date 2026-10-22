@@ -1,0 +1,139 @@
+# Entorno local completo de la Librería AYD.
+# Reproduce la topología de AWS: frontend y gateway juntos, un contenedor por microservicio
+# y una base PostgreSQL por servicio (en la nube son instancias RDS).
+#
+#   cp .env.example .env
+#   docker compose up --build
+
+name: libreria-ayd
+
+x-node-servicio: &node-servicio
+  restart: unless-stopped
+  init: true
+  environment: &node-entorno
+    NODE_ENV: production
+    LOG_LEVEL: ${LOG_LEVEL:-info}
+
+services:
+  # ---------- Persistencia ----------
+  libros-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: libros_db
+      POSTGRES_USER: libros
+      POSTGRES_PASSWORD: ${LIBROS_DB_PASSWORD:?Defina LIBROS_DB_PASSWORD en .env}
+    volumes:
+      - libros-datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U libros -d libros_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [datos-libros]
+
+  ventas-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ventas_db
+      POSTGRES_USER: ventas
+      POSTGRES_PASSWORD: ${VENTAS_DB_PASSWORD:?Defina VENTAS_DB_PASSWORD en .env}
+    volumes:
+      - ventas-datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ventas -d ventas_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [datos-ventas]
+
+  # ---------- Microservicios ----------
+  libros:
+    <<: *node-servicio
+    build: ./services/libros
+    image: libreria-ayd/libros:${APP_VERSION:-dev}
+    environment:
+      <<: *node-entorno
+      PORT: 3001
+      DB_HOST: libros-db
+      DB_PORT: 5432
+      DB_NAME: libros_db
+      DB_USER: libros
+      DB_PASSWORD: ${LIBROS_DB_PASSWORD}
+      DB_SSL: "false"
+    depends_on:
+      libros-db:
+        condition: service_healthy
+    networks: [backend, datos-libros]
+
+  ventas:
+    <<: *node-servicio
+    build: ./services/ventas
+    image: libreria-ayd/ventas:${APP_VERSION:-dev}
+    environment:
+      <<: *node-entorno
+      PORT: 3002
+      DB_HOST: ventas-db
+      DB_PORT: 5432
+      DB_NAME: ventas_db
+      DB_USER: ventas
+      DB_PASSWORD: ${VENTAS_DB_PASSWORD}
+      DB_SSL: "false"
+      LIBROS_SERVICE_URL: http://libros:3001
+    depends_on:
+      ventas-db:
+        condition: service_healthy
+      libros:
+        condition: service_started
+        required: false
+    networks: [backend, datos-ventas]
+
+  # ---------- Borde ----------
+  api-gateway:
+    <<: *node-servicio
+    build: ./api-gateway
+    image: libreria-ayd/api-gateway:${APP_VERSION:-dev}
+    environment:
+      <<: *node-entorno
+      PORT: 8080
+      APP_VERSION: ${APP_VERSION:-dev}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Defina ADMIN_API_KEY en .env}
+      LIBROS_SERVICE_URL: http://libros:3001
+      VENTAS_SERVICE_URL: http://ventas:3002
+      # En local no hay ALB delante.
+      TRUST_PROXY_HOPS: 0
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    # El gateway tolera servicios caídos (responde 503), así que puede arrancar solo.
+    depends_on:
+      libros:
+        condition: service_started
+        required: false
+      ventas:
+        condition: service_started
+        required: false
+    networks: [frontend, backend]
+
+  frontend:
+    restart: unless-stopped
+    build: ./frontend
+    image: libreria-ayd/frontend:${APP_VERSION:-dev}
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks: [frontend]
+
+# Redes separadas: cada base solo es visible para su microservicio,
+# igual que con los grupos de seguridad en AWS.
+networks:
+  frontend:
+  backend:
+  datos-libros:
+  datos-ventas:
+
+volumes:
+  libros-datos:
+  ventas-datos:
