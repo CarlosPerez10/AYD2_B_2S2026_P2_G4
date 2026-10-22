@@ -91,12 +91,13 @@ export function proxyServicio({ servicio, prefijo, destino, tiempoLimiteMs }) {
     });
 
     peticion.on('error', (error) => {
+      // El cliente ya cerró la conexión: no hay a quién responder.
+      if (res.destroyed) return;
       // Si ya se enviaron encabezados no se puede cambiar la respuesta: se corta la conexión.
       if (res.headersSent) {
         res.destroy(error);
         return;
       }
-      error.servicio = servicio;
       next(Object.assign(traducirError(error, servicio), { cause: error }));
     });
 
