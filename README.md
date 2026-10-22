@@ -24,7 +24,8 @@ componentes corren en contenedores **Docker**.
 | Kevin Mark Hernández Chicol | 202001053 | Desarrollador frontend | Aplicación web y manual de usuario |
 | Billy James Asael Chamale Sánchez | 201907502 | Ingeniero DevOps / Cloud | Terraform, Ansible, ECR y despliegue en AWS |
 
-El reparto detallado de tareas está en [`docs/equipo/plan-de-trabajo.md`](docs/equipo/plan-de-trabajo.md).
+El reparto de componentes está en [`docs/equipo/plan-de-trabajo.md`](docs/equipo/plan-de-trabajo.md) y la guía
+detallada de lo que construye cada integrante, en [`docs/equipo/tareas-por-integrante.md`](docs/equipo/tareas-por-integrante.md).
 
 ---
 
