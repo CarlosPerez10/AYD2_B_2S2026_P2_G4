@@ -98,3 +98,118 @@ flowchart TB
 | RDS `libros_db` / `ventas_db` | `«device»` | Bases gestionadas, sin acceso público. |
 | Amazon ECR | `«artifact repository»` | Registro privado de imágenes. |
 | Terraform / Ansible | `«executionEnvironment»` | Herramientas que corren en el equipo del operador. |
+
+## 3. Red y seguridad
+
+### 3.1 Direccionamiento
+
+| Subred | CIDR | Zona | Contenido |
+|--------|------|------|-----------|
+| `publica-a` | `10.0.1.0/24` | us-east-1a | ALB, EC2 frontend, EC2 libros |
+| `publica-b` | `10.0.2.0/24` | us-east-1b | ALB, EC2 ventas |
+| `privada-a` | `10.0.11.0/24` | us-east-1a | RDS (grupo de subredes) |
+| `privada-b` | `10.0.12.0/24` | us-east-1b | RDS (grupo de subredes) |
+
+El ALB y el grupo de subredes de RDS requieren al menos dos zonas de disponibilidad.
+Las subredes privadas no tienen ruta a Internet.
+
+### 3.2 Grupos de seguridad
+
+| Grupo | Entrada permitida | Origen |
+|-------|-------------------|--------|
+| `sg-alb` | TCP 80 | `0.0.0.0/0` |
+| `sg-frontend` | TCP 80, TCP 8080 | `sg-alb` |
+| | TCP 22 | IP del operador (`var.ip_operador`) |
+| `sg-libros` | TCP 3001 | `sg-frontend`, `sg-ventas` |
+| | TCP 22 | IP del operador |
+| `sg-ventas` | TCP 3002 | `sg-frontend` |
+| | TCP 22 | IP del operador |
+| `sg-rds-libros` | TCP 5432 | `sg-libros` |
+| `sg-rds-ventas` | TCP 5432 | `sg-ventas` |
+
+La salida está abierta solo en las instancias EC2 (para `apt` y para descargar de ECR).
+Además del grupo de seguridad, Ansible activa **UFW** en cada VM con las mismas reglas
+(defensa en profundidad).
+
+### 3.3 Secretos
+
+| Secreto | Dónde vive | Cómo llega al contenedor |
+|---------|-----------|--------------------------|
+| Contraseñas de RDS | `terraform.tfvars` (no versionado) → salida sensible de Terraform | Ansible Vault → variable de entorno |
+| `ADMIN_API_KEY` | Ansible Vault (`group_vars/all/vault.yml`) | Variable de entorno del gateway |
+| Llave SSH | Equipo del operador | Ansible (`ansible_ssh_private_key_file`) |
+
+## 4. Responsabilidad de Terraform
+
+```
+infra/terraform/
+├── main.tf               # proveedor y backend
+├── variables.tf
+├── outputs.tf            # IPs, DNS del ALB, endpoints RDS, URLs de ECR
+├── terraform.tfvars.example
+└── modules/
+    ├── red/              # VPC, subredes, IGW, rutas
+    ├── seguridad/        # grupos de seguridad
+    ├── computo/          # EC2, IP elásticas, rol IAM, par de llaves
+    ├── balanceador/      # ALB, target groups, listener y reglas
+    ├── base_datos/       # RDS libros y ventas, grupo de subredes
+    └── registro/         # repositorios ECR y política de ciclo de vida
+```
+
+Las salidas de Terraform alimentan el inventario de Ansible (`terraform output -json`), de
+modo que no se copian IPs a mano.
+
+## 5. Responsabilidad de Ansible
+
+```
+infra/ansible/
+├── ansible.cfg
+├── site.yml                  # orquesta todos los roles
+├── inventory/
+│   └── hosts.ini.example     # generado desde terraform output
+├── group_vars/
+│   └── all/
+│       ├── main.yml
+│       └── vault.yml         # cifrado
+└── roles/
+    ├── comun/                # apt, zona horaria, UFW, usuario de despliegue
+    ├── docker/               # Docker Engine + compose plugin desde repo oficial
+    ├── ecr_login/            # credenciales de ECR vía rol IAM
+    ├── despliegue_libros/
+    ├── despliegue_ventas/
+    └── despliegue_frontend/  # frontend + api-gateway
+```
+
+Cada rol de despliegue lanza su contenedor con:
+
+- `restart_policy: unless-stopped`
+- Puerto publicado solo en el que exige el grupo de seguridad.
+- Variables de entorno con URLs privadas de los servicios y del endpoint RDS.
+- *Healthcheck* de Docker contra `/health`.
+- Espera activa (`uri` con reintentos) hasta que `/health` responda `200`.
+
+## 6. Flujo de despliegue
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor OP as Operador
+    participant TF as Terraform
+    participant AWS as AWS
+    participant DK as Docker (local/CI)
+    participant ECR as Amazon ECR
+    participant AN as Ansible
+    participant VM as EC2
+
+    OP->>TF: terraform init && terraform apply
+    TF->>AWS: Crea VPC, SG, EC2 + EIP, ALB, RDS, ECR
+    AWS-->>TF: IDs, IPs, endpoints
+    TF-->>OP: terraform output -json
+    OP->>DK: docker build (4 imágenes) etiquetadas con versión
+    DK->>ECR: docker push
+    OP->>AN: ansible-playbook site.yml
+    AN->>VM: Configura SO, instala Docker, login ECR
+    AN->>VM: docker pull + run con variables de red y BD
+    VM-->>AN: /health 200
+    AN-->>OP: Despliegue completado (DNS del ALB)
+```
