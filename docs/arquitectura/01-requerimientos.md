@@ -263,7 +263,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | ID | Atributo | Escenario | Medida | Táctica aplicada |
 |----|----------|-----------|--------|------------------|
 | RNF-01 | Disponibilidad | Un contenedor de un microservicio se detiene inesperadamente. | Docker lo reinicia en menos de 30 s; el ALB deja de enviarle tráfico mientras su *health check* falla. | Política `restart: unless-stopped`, *health checks* en ALB y en contenedores. |
-| RNF-02 | Rendimiento | Un cliente busca un libro con 50 usuarios concurrentes. | El percentil 95 de respuesta es menor a 500 ms. | Índices de búsqueda en PostgreSQL, paginación obligatoria, compresión gzip en gateway. |
+| RNF-02 | Rendimiento | Un cliente busca un libro con 50 usuarios concurrentes. | El percentil 95 de respuesta es menor a 500 ms. | Índices de búsqueda en PostgreSQL, paginación obligatoria, conexiones persistentes del gateway a los servicios, compresión gzip en Nginx. |
 | RNF-03 | Escalabilidad | Aumenta el tráfico en el catálogo. | Se puede agregar otra instancia de Libros detrás del gateway sin cambiar código, y escalar RDS verticalmente. | Servicios sin estado, configuración por variables de entorno, base de datos gestionada. |
 | RNF-04 | Seguridad | Un usuario sin llave intenta crear un libro o una venta. | La API Gateway responde `401` y la petición nunca llega al microservicio. | Autenticación en el borde, grupos de seguridad que solo permiten tráfico interno a los microservicios, bases de datos en subred privada. |
 | RNF-05 | Consistencia | Dos ventas simultáneas compiten por la última unidad de un libro. | Solo una se registra; la otra recibe `409`. | Descuento atómico (`UPDATE ... WHERE existencias >= cantidad`) y compensación ante fallos. |
