@@ -1,0 +1,45 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+coverage/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+!terraform.tfvars.example
+
+# Ansible
+*.retry
+infra/ansible/inventory/hosts.ini
+
+# Llaves y secretos
+*.pem
+*.key
+id_rsa*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
