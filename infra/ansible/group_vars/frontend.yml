@@ -1,0 +1,2 @@
+# Puertos de la aplicación que UFW abre hacia la VPC (el ALB entra por estos).
+puertos_aplicacion: [80, 8080]

@@ -1,0 +1,49 @@
+- name: Actualiza el índice de paquetes
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Instala paquetes base
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - ufw
+      - unattended-upgrades
+    state: present
+
+- name: Configura la zona horaria
+  community.general.timezone:
+    name: "{{ zona_horaria }}"
+
+- name: Crea el usuario de despliegue
+  ansible.builtin.user:
+    name: "{{ usuario_despliegue }}"
+    shell: /bin/bash
+    create_home: true
+
+- name: Autoriza la misma llave SSH del operador para el usuario de despliegue
+  ansible.posix.authorized_key:
+    user: "{{ usuario_despliegue }}"
+    key: "{{ lookup('ansible.builtin.file', ansible_ssh_private_key_file | expanduser ~ '.pub') }}"
+
+# ---------- Firewall (defensa en profundidad junto a los grupos de seguridad) ----------
+- name: Permite SSH
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+
+- name: Permite los puertos de la aplicación solo desde la VPC
+  community.general.ufw:
+    rule: allow
+    port: "{{ item | string }}"
+    proto: tcp
+    src: "{{ cidr_vpc }}"
+  loop: "{{ puertos_aplicacion }}"
+
+- name: Deniega el resto del tráfico entrante y activa UFW
+  community.general.ufw:
+    state: enabled
+    default: deny
+    direction: incoming

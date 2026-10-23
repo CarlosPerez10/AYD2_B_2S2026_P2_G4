@@ -1,0 +1,23 @@
+# Docker obtiene credenciales de ECR con el rol IAM de la instancia: sin llaves en disco.
+- name: Instala el ayudante de credenciales de ECR
+  ansible.builtin.apt:
+    name: amazon-ecr-credential-helper
+    state: present
+
+- name: Crea ~/.docker para root y el usuario de despliegue
+  ansible.builtin.file:
+    path: "{{ item.home }}/.docker"
+    state: directory
+    owner: "{{ item.usuario }}"
+    group: "{{ item.usuario }}"
+    mode: "0700"
+  loop: "{{ usuarios_docker }}"
+
+- name: Configura Docker para usar ecr-login con el registro del proyecto
+  ansible.builtin.copy:
+    dest: "{{ item.home }}/.docker/config.json"
+    owner: "{{ item.usuario }}"
+    group: "{{ item.usuario }}"
+    mode: "0600"
+    content: "{{ { 'credHelpers': { registro_ecr: 'ecr-login' } } | to_nice_json }}\n"
+  loop: "{{ usuarios_docker }}"

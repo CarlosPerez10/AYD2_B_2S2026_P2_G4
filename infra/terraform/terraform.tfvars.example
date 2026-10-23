@@ -1,0 +1,14 @@
+# Copiar a terraform.tfvars (no se versiona) y completar.
+
+region      = "us-east-1"
+zonas       = ["us-east-1a", "us-east-1b"]
+ip_operador = "203.0.113.10/32" # curl -s https://checkip.amazonaws.com → agregar /32
+
+# Contenido de la llave pública (ssh-keygen -t ed25519 -f ~/.ssh/libreria-ayd)
+llave_publica = "ssh-ed25519 AAAA... operador@equipo"
+
+# AWS Academy (Learner Lab) no permite crear roles IAM: usar el perfil existente.
+# perfil_instancia = "LabInstanceProfile"
+
+contrasena_bd_libros = "cambiar-por-una-segura"
+contrasena_bd_ventas = "cambiar-por-otra-segura"

@@ -1,0 +1,4 @@
+# Los módulos community.docker corren con become (root), así que root también lo necesita.
+usuarios_docker:
+  - { usuario: root, home: /root }
+  - { usuario: "{{ usuario_despliegue }}", home: "/home/{{ usuario_despliegue }}" }

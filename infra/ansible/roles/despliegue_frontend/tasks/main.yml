@@ -1,0 +1,62 @@
+- name: Crea la red de Docker compartida por frontend y gateway
+  community.docker.docker_network:
+    name: "{{ red_docker }}"
+
+- name: Ejecuta la API Gateway
+  community.docker.docker_container:
+    name: "{{ contenedor_gateway }}"
+    image: "{{ registro_ecr }}/api-gateway:{{ version_imagen }}"
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ red_docker }}"
+    published_ports:
+      - "8080:8080"
+    env:
+      NODE_ENV: production
+      PORT: "8080"
+      APP_VERSION: "{{ version_imagen | string }}"
+      LOG_LEVEL: "{{ nivel_log }}"
+      ADMIN_API_KEY: "{{ admin_api_key }}"
+      LIBROS_SERVICE_URL: "http://{{ ip_privada_libros }}:3001"
+      VENTAS_SERVICE_URL: "http://{{ ip_privada_ventas }}:3002"
+      # Un salto de proxy confiable: el ALB.
+      TRUST_PROXY_HOPS: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+  no_log: true # el entorno incluye la llave de administración
+
+- name: Espera a que el gateway responda sano
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/health
+    status_code: 200
+  register: salud_gateway
+  until: salud_gateway.status == 200
+  retries: 30
+  delay: 5
+
+- name: Ejecuta el frontend
+  community.docker.docker_container:
+    name: "{{ contenedor_frontend }}"
+    image: "{{ registro_ecr }}/frontend:{{ version_imagen }}"
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: "{{ red_docker }}"
+    published_ports:
+      - "80:80"
+
+- name: Espera a que el frontend responda
+  ansible.builtin.uri:
+    url: http://127.0.0.1/
+    status_code: 200
+  register: salud_frontend
+  until: salud_frontend.status == 200
+  retries: 30
+  delay: 5
