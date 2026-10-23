@@ -180,15 +180,20 @@ correctos sin consultar a Libros.
 ### 5.3 Cálculo del ranking
 
 ```sql
-SELECT libro_id, titulo, autor,
+SELECT libro_id,
+       (ARRAY_AGG(titulo ORDER BY fecha DESC, id DESC))[1] AS titulo,
+       (ARRAY_AGG(autor  ORDER BY fecha DESC, id DESC))[1] AS autor,
        SUM(cantidad) AS unidades_vendidas,
        SUM(total)    AS monto_total
 FROM venta
 WHERE fecha >= COALESCE($1, '-infinity') AND fecha < COALESCE($2, 'infinity')
-GROUP BY libro_id, titulo, autor
+GROUP BY libro_id
 ORDER BY unidades_vendidas DESC, monto_total DESC, titulo ASC
 LIMIT $3;
 ```
+
+Se agrupa **solo por `libro_id`**: si un libro cambia de título, sus ventas anteriores y
+posteriores suman en una sola posición, mostrada con el título y autor más recientes.
 
 El ranking se calcula al momento de la consulta a partir del historial. Con el volumen
 esperado (miles de ventas) la consulta es inmediata gracias al índice por fecha; si creciera,
