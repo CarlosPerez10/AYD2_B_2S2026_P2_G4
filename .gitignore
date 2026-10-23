@@ -27,6 +27,9 @@ terraform.tfvars
 # Ansible
 *.retry
 infra/ansible/inventory/hosts.ini
+# Los secretos sin cifrar nunca se versionan; vault.yml.example es la plantilla.
+infra/ansible/group_vars/all/vault.yml
+infra/ansible/collections/
 
 # Llaves y secretos
 *.pem

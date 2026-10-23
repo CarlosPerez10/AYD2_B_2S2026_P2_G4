@@ -1,0 +1,50 @@
+@startuml cdu-primera-descomposicion
+' CDU — primera descomposición del core
+title CDU — Primera Descomposición
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Cliente" as cliente
+actor "Administrador" as admin
+cliente <|-- admin
+
+rectangle "Librería AYD" {
+  package "Consultar catálogo" {
+    usecase "CU-01\nListar libros" as cu01
+    usecase "CU-02\nBuscar y filtrar libros" as cu02
+    usecase "CU-03\nVer detalle de libro" as cu03
+    usecase "CU-04\nConsultar ranking\nde más vendidos" as cu04
+  }
+  package "Gestionar catálogo" {
+    usecase "CU-05\nRegistrar libro" as cu05
+    usecase "CU-06\nActualizar libro" as cu06
+    usecase "CU-07\nEliminar libro" as cu07
+  }
+  package "Gestionar ventas" {
+    usecase "CU-08\nRegistrar venta" as cu08
+    usecase "CU-09\nConsultar historial\nde ventas" as cu09
+    usecase "Validar\nexistencias" as validar
+  }
+  usecase "Autenticar\nadministrador" as auth
+}
+
+cliente -- cu01
+cliente -- cu02
+cliente -- cu03
+cliente -- cu04
+admin -- cu05
+admin -- cu06
+admin -- cu07
+admin -- cu08
+admin -- cu09
+
+cu02 .> cu01 : <<extend>>
+cu08 ..> validar : <<include>>
+cu05 ..> auth : <<include>>
+cu06 ..> auth : <<include>>
+cu07 ..> auth : <<include>>
+cu08 ..> auth : <<include>>
+cu09 ..> auth : <<include>>
+@enduml

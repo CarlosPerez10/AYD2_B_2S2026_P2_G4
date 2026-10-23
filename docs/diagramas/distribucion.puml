@@ -1,0 +1,52 @@
+@startuml distribucion
+' Diagrama de distribución — ubicación física de los nodos en AWS
+title Diagrama de Distribución — AWS us-east-1
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor "Usuarios\n(Internet)" as usuarios
+
+node "Región us-east-1" as region {
+  node "VPC 10.0.0.0/16" as vpc {
+    node "Zona us-east-1a" as az_a {
+      node "Subred pública 10.0.1.0/24" as pub_a {
+        node "ALB\n(nodo a)" as alb_a <<balanceador>>
+        node "EC2 frontend\nIP elástica\nfrontend + api-gateway" as ec2_fe <<t3.micro>>
+        node "EC2 libros\nIP elástica" as ec2_lib <<t3.micro>>
+      }
+      node "Subred privada 10.0.11.0/24" as priv_a {
+        database "RDS libros_db" as rds_lib <<db.t3.micro>>
+      }
+    }
+    node "Zona us-east-1b" as az_b {
+      node "Subred pública 10.0.2.0/24" as pub_b {
+        node "ALB\n(nodo b)" as alb_b <<balanceador>>
+        node "EC2 ventas\nIP elástica" as ec2_ven <<t3.micro>>
+      }
+      node "Subred privada 10.0.12.0/24" as priv_b {
+        database "RDS ventas_db" as rds_ven <<db.t3.micro>>
+      }
+    }
+  }
+  node "Amazon ECR" as ecr <<registro>>
+}
+
+usuarios --> alb_a : HTTP :80
+usuarios --> alb_b : HTTP :80
+alb_a --> ec2_fe : :80 / :8080
+alb_b --> ec2_fe : :80 / :8080
+ec2_fe --> ec2_lib : :3001
+ec2_fe --> ec2_ven : :3002
+ec2_ven --> ec2_lib : :3001
+ec2_lib --> rds_lib : :5432
+ec2_ven --> rds_ven : :5432
+ec2_fe ..> ecr : pull
+ec2_lib ..> ecr : pull
+ec2_ven ..> ecr : pull
+
+note right of priv_b
+  El grupo de subredes de RDS abarca
+  ambas zonas privadas; AWS ubica cada
+  instancia (single-AZ) en una de ellas.
+end note
+@enduml

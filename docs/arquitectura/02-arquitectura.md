@@ -42,7 +42,27 @@ flowchart TB
     VEN --> DBV
 ```
 
-Reglas de dependencia:
+### 2.1 Perspectiva basada en eventos
+
+La versión 1.0 registra las ventas de forma síncrona (ver [ADR-004](adr/ADR-004-comunicacion-sincrona-con-compensacion.md)).
+El siguiente diagrama muestra cómo se integra un **bus de eventos** con el modelo
+publicador/suscriptor cuando aparezcan más consumidores de una venta, sin cambiar los
+contratos públicos:
+
+![Diagrama de bloques con bus de eventos](../diagramas/bloques-eventos.svg)
+
+| Elemento | Rol | Evento |
+|----------|-----|--------|
+| Microservicio Ventas | Publicador | Emite `VentaRegistrada` al confirmar una venta. |
+| Bus de eventos (SNS + SQS) | Componente central | Recibe `VentaRegistrada`, la distribuye y deriva `NotificacionDeVenta`. |
+| Microservicio Libros | Suscriptor | Podría ajustar existencias de forma asíncrona. |
+| Proyección de ranking | Suscriptor (futuro) | Mantiene una vista materializada del ranking. |
+| Notificaciones | Suscriptor (futuro) | Avisa a la gerencia de ventas relevantes. |
+
+Beneficios esperados: comunicación desacoplada, posibilidad de agregar suscriptores sin
+tocar Ventas y escalado independiente del procesamiento de eventos.
+
+### 2.2 Reglas de dependencia
 
 - El frontend solo conoce la API Gateway.
 - Un microservicio nunca accede a la base de datos de otro; si necesita datos ajenos, usa la API del dueño.
@@ -94,35 +114,18 @@ services/<servicio>/
 
 ## 4. Diagrama de componentes
 
-```mermaid
-flowchart LR
-    subgraph FE[«component» Frontend]
-        UI[Vistas: Catálogo, Detalle, Ranking, Administración]
-        APIC[Cliente HTTP]
-    end
-    subgraph GW[«component» API Gateway]
-        AUTH[Autenticación admin]
-        RL[Límite de peticiones]
-        PX[Proxy de rutas]
-        HA[Agregador de salud]
-    end
-    subgraph LIB[«component» Libros]
-        LAPI[API pública /api/v1/libros]
-        LINT[API interna /internal/v1/libros]
-    end
-    subgraph VEN[«component» Ventas]
-        VAPI[API /api/v1/ventas]
-        RK[Cálculo de ranking]
-        LCLI[Cliente de Libros]
-    end
-    UI --> APIC --> AUTH --> RL --> PX
-    PX --> LAPI
-    PX --> VAPI
-    HA -.-> LIB
-    HA -.-> VEN
-    LCLI --> LAPI
-    LCLI --> LINT
-```
+Fuente: [`docs/diagramas/componentes.puml`](../diagramas/componentes.puml). Cada conector
+une una **interfaz provista** (círculo) con el componente que la **requiere** (semicírculo).
+
+![Diagrama de componentes](../diagramas/componentes.svg)
+
+| Interfaz | Provista por | Requerida por |
+|----------|--------------|---------------|
+| API pública `/api/v1/*` | API Gateway | Frontend |
+| `ILibros` `/api/v1/libros` | Libros | API Gateway, Ventas |
+| `IExistencias` `/internal/v1/libros` | Libros | Ventas |
+| `IVentas`, `IRanking` `/api/v1/ventas` | Ventas | API Gateway |
+| `ISalud` `/health` | Libros, Ventas | API Gateway (agregador de salud), ALB |
 
 La API interna de Libros (`/internal/v1/...`) solo la usa Ventas. La API Gateway **bloquea**
 cualquier petición externa a rutas `/internal`, y en la nube los grupos de seguridad solo

@@ -2,9 +2,7 @@
 
 Responsable: **Kevin Mark Hernández Chicol** (202001053)
 
-> **Capturas pendientes.** Las imágenes referenciadas en `docs/manuales/img/` deben tomarse
-> del sistema en ejecución (`docker compose up --build` o el DNS del ALB). Los nombres de
-> archivo ya están definidos en cada sección.
+> Las capturas se tomaron del sistema en ejecución con los datos semilla (versión 0.2.0).
 
 ## 1. Introducción y requisitos
 
