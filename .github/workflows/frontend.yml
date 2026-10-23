@@ -1,0 +1,54 @@
+name: frontend
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm audit --audit-level=moderate
+      - run: npm run build
+
+  imagen:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construye la imagen
+        run: docker build -t libreria-ayd/frontend:${{ github.sha }} frontend
+      - name: Verifica que Nginx sirva la aplicación
+        run: |
+          docker run -d --name frontend -p 8081:80 libreria-ayd/frontend:${{ github.sha }}
+          for intento in $(seq 1 10); do
+            if curl -fsS http://localhost:8081/ | grep -q '<div id="raiz">'; then
+              curl -fsS -o /dev/null http://localhost:8081/mas-vendidos && exit 0
+            fi
+            sleep 1
+          done
+          docker logs frontend
+          exit 1
