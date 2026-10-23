@@ -103,6 +103,8 @@ services:
       VENTAS_SERVICE_URL: http://ventas:3002
       # En local no hay ALB delante.
       TRUST_PROXY_HOPS: 0
+      # Se puede subir para pruebas de carga desde un solo equipo (tests/carga).
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
     ports:
       - "${GATEWAY_PORT:-8080}:8080"
     # El gateway tolera servicios caídos (responde 503), así que puede arrancar solo.
