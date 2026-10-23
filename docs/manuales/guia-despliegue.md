@@ -5,6 +5,10 @@ Responsable: **Billy James Asael Chamale Sánchez** (201907502)
 Esta guía lleva la plataforma desde una cuenta de AWS vacía hasta el sistema accesible por
 el DNS del balanceador, y explica cómo destruirlo todo.
 
+> **Camino corto:** en Windows siga [despliegue-paso-a-paso.md](despliegue-paso-a-paso.md), que
+> usa `infra/scripts/preparar-wsl.sh`, `desplegar.sh` y `destruir.sh` para ejecutar todo lo de
+> abajo con un solo comando.
+
 ## 1. Requisitos en el equipo del operador
 
 | Herramienta | Versión | Para qué |
