@@ -19,8 +19,15 @@ describe('repositorio de ventas', () => {
     const pool = poolFalso();
     await crearRepositorioVentas(pool).ranking({ limite: 10 });
     assert.match(pool.consultas[0].sql, /ORDER BY unidades_vendidas DESC, monto_total DESC, titulo ASC/);
-    assert.match(pool.consultas[0].sql, /GROUP BY libro_id, titulo, autor/);
+    assert.match(pool.consultas[0].sql, /GROUP BY libro_id\s/);
     assert.deepEqual(pool.consultas[0].valores, [null, null, 10]);
+  });
+
+  it('usa el título y autor de la venta más reciente de cada libro', async () => {
+    const pool = poolFalso();
+    await crearRepositorioVentas(pool).ranking({ limite: 10 });
+    assert.match(pool.consultas[0].sql, /ARRAY_AGG\(titulo ORDER BY fecha DESC, id DESC\)\)\[1\] AS titulo/);
+    assert.match(pool.consultas[0].sql, /ARRAY_AGG\(autor\s+ORDER BY fecha DESC, id DESC\)\)\[1\] AS autor/);
   });
 
   it('pasa el rango de fechas como parámetros', async () => {
