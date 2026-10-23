@@ -6,6 +6,34 @@ sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [0.2.0] - 2026-10-22
+
+Infraestructura como código validada, documentación alineada con la metodología del curso y
+evidencias de calidad.
+
+### Agregado
+
+- **Terraform**: módulos de red, seguridad, cómputo con IP elásticas, balanceador, RDS y ECR,
+  con lock de proveedores para Linux, Windows y macOS.
+- **Ansible**: roles `comun`, `docker`, `ecr_login` y despliegue por VM; script de inventario
+  desde `terraform output`.
+- Script y workflow de *build* y *push* de las cuatro imágenes a ECR.
+- Guía de despliegue en AWS.
+- Diagramas UML en PlantUML: casos de uso del negocio, CDU de alto nivel y primera
+  descomposición, componentes con interfaces, bloques con bus de eventos y distribución.
+- Requerimientos: características del sistema, modelo de casos de uso del negocio (CUN),
+  campos resumen, prioridad y mejoras en los CDU expandidos y matriz CUN ↔ CU.
+- Capturas reales en el manual de usuario.
+- Resultados de la prueba de carga local: p95 de 13.86 ms (búsqueda) y 13.34 ms (ranking), 0 % de errores.
+- CI de infraestructura (`terraform validate` y `ansible-lint` con perfil *production*).
+- `RATE_LIMIT_MAX` configurable desde `.env` para pruebas de carga.
+
+### Corregido
+
+- `apt_repository` (obsoleto, se elimina en ansible-core 2.25) reemplazado por `deb822_repository`.
+- Variables de roles de Ansible sin prefijo y hosts con el mismo nombre que su grupo.
+- `vault.yml` queda fuera del repositorio aunque esté cifrado.
+
 ## [0.1.0] - 2026-10-22
 
 Primera versión funcional: la plataforma completa corre en local con `docker compose`.
@@ -38,5 +66,6 @@ Primera versión funcional: la plataforma completa corre en local con `docker co
 - Nginx resolvía el gateway solo al arrancar; ahora lo resuelve en cada petición.
 - El mensaje de existencias insuficientes no concordaba en número ("1 unidades").
 
-[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.1.0...develop
+[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.2.0...develop
+[0.2.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/releases/tag/v0.1.0

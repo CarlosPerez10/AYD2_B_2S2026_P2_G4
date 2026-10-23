@@ -13,6 +13,7 @@ x-node-servicio: &node-servicio
   environment: &node-entorno
     NODE_ENV: production
     LOG_LEVEL: ${LOG_LEVEL:-info}
+    APP_VERSION: ${APP_VERSION:-dev}
 
 services:
   # ---------- Persistencia ----------
@@ -97,7 +98,6 @@ services:
     environment:
       <<: *node-entorno
       PORT: 8080
-      APP_VERSION: ${APP_VERSION:-dev}
       ADMIN_API_KEY: ${ADMIN_API_KEY:?Defina ADMIN_API_KEY en .env}
       LIBROS_SERVICE_URL: http://libros:3001
       VENTAS_SERVICE_URL: http://ventas:3002
