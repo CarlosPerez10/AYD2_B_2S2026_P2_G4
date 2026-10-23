@@ -1,2 +1,2 @@
-contenedor_libros: libros
-puerto_libros: 3001
+despliegue_libros_contenedor: libros
+despliegue_libros_puerto: 3001

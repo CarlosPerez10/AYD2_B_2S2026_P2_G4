@@ -1,2 +1,2 @@
-contenedor_ventas: ventas
-puerto_ventas: 3002
+despliegue_ventas_contenedor: ventas
+despliegue_ventas_puerto: 3002

@@ -1,12 +1,12 @@
 - name: Ejecuta el contenedor de Libros
   community.docker.docker_container:
-    name: "{{ contenedor_libros }}"
+    name: "{{ despliegue_libros_contenedor }}"
     image: "{{ registro_ecr }}/libros:{{ version_imagen }}"
     pull: always
     state: started
     restart_policy: unless-stopped
     published_ports:
-      - "{{ puerto_libros }}:3001"
+      - "{{ despliegue_libros_puerto }}:3001"
     env:
       NODE_ENV: production
       PORT: "3001"
@@ -28,9 +28,9 @@
 
 - name: Espera a que Libros responda sano
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ puerto_libros }}/health"
+    url: "http://127.0.0.1:{{ despliegue_libros_puerto }}/health"
     status_code: 200
-  register: salud
-  until: salud.status == 200
+  register: despliegue_libros_salud
+  until: despliegue_libros_salud.status == 200
   retries: 30
   delay: 5

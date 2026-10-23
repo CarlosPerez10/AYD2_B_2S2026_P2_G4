@@ -1,12 +1,12 @@
 - name: Ejecuta el contenedor de Ventas
   community.docker.docker_container:
-    name: "{{ contenedor_ventas }}"
+    name: "{{ despliegue_ventas_contenedor }}"
     image: "{{ registro_ecr }}/ventas:{{ version_imagen }}"
     pull: always
     state: started
     restart_policy: unless-stopped
     published_ports:
-      - "{{ puerto_ventas }}:3002"
+      - "{{ despliegue_ventas_puerto }}:3002"
     env:
       NODE_ENV: production
       PORT: "3002"
@@ -29,9 +29,9 @@
 
 - name: Espera a que Ventas responda sano
   ansible.builtin.uri:
-    url: "http://127.0.0.1:{{ puerto_ventas }}/health"
+    url: "http://127.0.0.1:{{ despliegue_ventas_puerto }}/health"
     status_code: 200
-  register: salud
-  until: salud.status == 200
+  register: despliegue_ventas_salud
+  until: despliegue_ventas_salud.status == 200
   retries: 30
   delay: 5
