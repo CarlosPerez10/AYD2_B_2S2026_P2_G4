@@ -44,7 +44,7 @@ jobs:
       - name: Verifica que Nginx sirva la aplicación
         run: |
           docker run -d --name frontend -p 8081:80 libreria-ayd/frontend:${{ github.sha }}
-          for intento in $(seq 1 10); do
+          for _ in $(seq 1 10); do
             if curl -fsS http://localhost:8081/ | grep -q '<div id="raiz">'; then
               curl -fsS -o /dev/null http://localhost:8081/mas-vendidos && exit 0
             fi
