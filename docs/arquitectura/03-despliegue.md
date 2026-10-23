@@ -20,71 +20,11 @@ infraestructura crea **Terraform** y qué parte configura **Ansible**.
 
 ## 2. Diagrama UML de despliegue
 
-La fuente UML estricta (nodos, entornos de ejecución y artefactos con estereotipos) está en
-[`docs/diagramas/despliegue.puml`](../diagramas/despliegue.puml). La siguiente versión en
-Mermaid se renderiza directamente en GitHub.
+Diagrama UML con nodos (`«device»`), entornos de ejecución (`«executionEnvironment»`) y
+artefactos (`«artifact»`). Fuente editable en draw.io:
+[`docs/diagramas/despliegue.drawio`](../diagramas/despliegue.drawio).
 
-![Diagrama UML de despliegue](../diagramas/despliegue.svg)
-
-```mermaid
-flowchart TB
-    USR["«device»<br/>Navegador del usuario"]
-
-    subgraph AWS["«cloud» AWS · us-east-1"]
-        ECR[("«artifact repository»<br/>Amazon ECR<br/>frontend · api-gateway · libros · ventas")]
-
-        subgraph VPC["«network» VPC 10.0.0.0/16"]
-            ALB["«device» Application Load Balancer<br/>:80<br/>/api/* , /health* → tg-gateway<br/>/* → tg-frontend"]
-
-            subgraph PUB["«subnet» Públicas 10.0.1.0/24 · 10.0.2.0/24"]
-                subgraph EC2F["«device» EC2 frontend · Ubuntu 24.04 · IP elástica"]
-                    subgraph DKF["«executionEnvironment» Docker Engine"]
-                        FEA["«artifact»<br/>frontend:1.x<br/>Nginx :80"]
-                        GWA["«artifact»<br/>api-gateway:1.x<br/>Node.js :8080"]
-                    end
-                end
-                subgraph EC2L["«device» EC2 libros · Ubuntu 24.04 · IP elástica"]
-                    subgraph DKL["«executionEnvironment» Docker Engine"]
-                        LIA["«artifact»<br/>libros:1.x<br/>Node.js :3001"]
-                    end
-                end
-                subgraph EC2V["«device» EC2 ventas · Ubuntu 24.04 · IP elástica"]
-                    subgraph DKV["«executionEnvironment» Docker Engine"]
-                        VEA["«artifact»<br/>ventas:1.x<br/>Node.js :3002"]
-                    end
-                end
-            end
-
-            subgraph PRIV["«subnet» Privadas 10.0.11.0/24 · 10.0.12.0/24"]
-                RDSL[("«device» RDS PostgreSQL 16<br/>libros_db :5432")]
-                RDSV[("«device» RDS PostgreSQL 16<br/>ventas_db :5432")]
-            end
-        end
-    end
-
-    subgraph OPS["«device» Equipo del operador"]
-        TF["«executionEnvironment» Terraform"]
-        AN["«executionEnvironment» Ansible"]
-    end
-
-    USR -- "HTTP :80" --> ALB
-    ALB -- "HTTP :80" --> FEA
-    ALB -- "HTTP :8080" --> GWA
-    GWA -- "HTTP :3001 (IP privada)" --> LIA
-    GWA -- "HTTP :3002 (IP privada)" --> VEA
-    VEA -- "HTTP :3001 (IP privada)" --> LIA
-    LIA -- "TCP :5432 (TLS)" --> RDSL
-    VEA -- "TCP :5432 (TLS)" --> RDSV
-
-    TF -. "«provisiona» API de AWS" .-> VPC
-    TF -. "«provisiona»" .-> ECR
-    AN -. "«configura y despliega» SSH :22 a IP elásticas" .-> EC2F
-    AN -. "«configura y despliega»" .-> EC2L
-    AN -. "«configura y despliega»" .-> EC2V
-    EC2F -. "docker pull" .-> ECR
-    EC2L -. "docker pull" .-> ECR
-    EC2V -. "docker pull" .-> ECR
-```
+![Diagrama UML de despliegue](../diagramas/despliegue.png)
 
 ### 2.1 Elementos del diagrama
 
@@ -102,9 +42,9 @@ flowchart TB
 ### 2.2 Diagrama de distribución
 
 Muestra **dónde** queda físicamente cada nodo: región, zonas de disponibilidad y subredes.
-Fuente: [`docs/diagramas/distribucion.puml`](../diagramas/distribucion.puml).
+Fuente editable: [`docs/diagramas/distribucion.drawio`](../diagramas/distribucion.drawio).
 
-![Diagrama de distribución](../diagramas/distribucion.svg)
+![Diagrama de distribución](../diagramas/distribucion.png)
 
 | Zona | Subred pública | Subred privada |
 |------|----------------|----------------|
@@ -205,26 +145,4 @@ Cada rol de despliegue lanza su contenedor con:
 
 ## 6. Flujo de despliegue
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor OP as Operador
-    participant TF as Terraform
-    participant AWS as AWS
-    participant DK as Docker (local/CI)
-    participant ECR as Amazon ECR
-    participant AN as Ansible
-    participant VM as EC2
-
-    OP->>TF: terraform init && terraform apply
-    TF->>AWS: Crea VPC, SG, EC2 + EIP, ALB, RDS, ECR
-    AWS-->>TF: IDs, IPs, endpoints
-    TF-->>OP: terraform output -json
-    OP->>DK: docker build (4 imágenes) etiquetadas con versión
-    DK->>ECR: docker push
-    OP->>AN: ansible-playbook site.yml
-    AN->>VM: Configura SO, instala Docker, login ECR
-    AN->>VM: docker pull + run con variables de red y BD
-    VM-->>AN: /health 200
-    AN-->>OP: Despliegue completado (DNS del ALB)
-```
+![Flujo de despliegue](../diagramas/flujo-despliegue.png)
