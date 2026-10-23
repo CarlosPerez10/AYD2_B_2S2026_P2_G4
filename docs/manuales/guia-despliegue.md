@@ -149,5 +149,6 @@ terminar.
 - Docker publica los puertos con sus propias reglas de iptables, que se evalúan antes que
   UFW. La protección efectiva de los puertos 80, 8080, 3001 y 3002 la dan los grupos de
   seguridad; UFW protege el resto de puertos del sistema operativo.
-- `vault.yml` debe subirse **cifrado**. `terraform.tfvars`, `hosts.ini` y las llaves están en
-  `.gitignore`.
+- `vault.yml`, `terraform.tfvars`, `hosts.ini` y las llaves están en `.gitignore`: nunca se
+  suben al repositorio, ni siquiera cifrados. Cada operador los crea desde sus plantillas
+  (`*.example`) y guarda la contraseña de Vault fuera del repositorio.
