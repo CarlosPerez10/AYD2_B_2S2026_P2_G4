@@ -22,6 +22,19 @@ los libros más vendidos que se actualice a partir de las transacciones registra
 | Ranking de libros más vendidos | Gestión de usuarios y contraseñas |
 | Administración del catálogo (crear, editar, eliminar) | Envíos o logística |
 
+### 1.3 Características del sistema
+
+| ID | Característica | Descripción |
+|----|----------------|-------------|
+| CAR-01 | Catálogo en línea | Listado paginado con título, autor, precio y existencias. |
+| CAR-02 | Búsqueda y filtrado | Búsqueda por título o autor sin distinguir mayúsculas ni tildes; filtros por autor, precio y disponibilidad. |
+| CAR-03 | Ranking de más vendidos | Calculado a partir del historial de ventas, filtrable por período. |
+| CAR-04 | Administración del catálogo | Alta, edición y baja de libros protegidas por llave de administración. |
+| CAR-05 | Registro de ventas | Cada venta descuenta existencias de forma atómica y queda en el historial. |
+| CAR-06 | Arquitectura de microservicios | Libros y Ventas independientes detrás de una API Gateway, cada uno con su base de datos. |
+| CAR-07 | Infraestructura como código | Toda la nube se crea con Terraform y se configura con Ansible, de forma reproducible. |
+| CAR-08 | Contenedores | Todos los componentes se distribuyen como imágenes Docker en un registro privado. |
+
 ## 2. Stakeholders
 
 | Stakeholder | Interés | Influencia |
@@ -44,56 +57,71 @@ los libros más vendidos que se actualice a partir de las transacciones registra
 El **Administrador** es una especialización del **Cliente**: puede hacer todo lo que hace un
 cliente y además las tareas de gestión.
 
-## 4. Casos de uso de alto nivel
+## 4. Modelo de casos de uso del negocio
 
-### 4.1 Core del sistema
+Describe los procesos de la librería **independientemente del sistema**: qué hace el negocio
+para dar valor a sus actores. Los casos de uso del sistema (sección 5) automatizan parte de
+estos procesos.
 
-```mermaid
-flowchart LR
-    C([Cliente])
-    A([Administrador])
-    subgraph SIS[Librería AYD]
-        CU1((Consultar<br/>catálogo))
-        CU2((Gestionar<br/>catálogo))
-        CU3((Gestionar<br/>ventas))
-    end
-    C --- CU1
-    A --- CU1
-    A --- CU2
-    A --- CU3
-    A -. «generaliza» .-> C
-```
+![Modelo de casos de uso del negocio](../diagramas/cun-negocio.svg)
 
-### 4.2 Primera descomposición
+| Actor del negocio | Rol |
+|-------------------|-----|
+| Cliente | Compra libros y quiere saber qué hay disponible y qué es popular. |
+| Proveedor | Editorial o distribuidor que abastece los títulos. |
+| Gerencia | Decide qué títulos reabastecer según las ventas. |
 
-```mermaid
-flowchart LR
-    C([Cliente])
-    A([Administrador])
-    subgraph SIS[Librería AYD]
-        CU01((CU-01 Listar<br/>libros))
-        CU02((CU-02 Buscar y<br/>filtrar libros))
-        CU03((CU-03 Ver detalle<br/>de libro))
-        CU04((CU-04 Consultar<br/>ranking))
-        CU05((CU-05 Registrar<br/>libro))
-        CU06((CU-06 Actualizar<br/>libro))
-        CU07((CU-07 Eliminar<br/>libro))
-        CU08((CU-08 Registrar<br/>venta))
-        CU09((CU-09 Consultar<br/>historial de ventas))
-        CU10((Validar<br/>existencias))
-    end
-    C --- CU01
-    C --- CU02
-    C --- CU03
-    C --- CU04
-    A --- CU05
-    A --- CU06
-    A --- CU07
-    A --- CU08
-    A --- CU09
-    CU02 -. «extend» .-> CU01
-    CU08 -. «include» .-> CU10
-```
+| Trabajador del negocio | Rol |
+|------------------------|-----|
+| Vendedor | Atiende al cliente y registra la venta. |
+| Encargado de inventario | Mantiene el catálogo y las existencias. |
+
+| Código | Caso de uso del negocio | Actor | Tipo | Automatizado por |
+|--------|-------------------------|-------|------|------------------|
+| CUN-01 | Vender libros | Cliente | Núcleo | CU-08, CU-09 |
+| CUN-02 | Informar disponibilidad del catálogo | Cliente | Núcleo | CU-01, CU-02, CU-03 |
+| CUN-03 | Abastecer catálogo | Proveedor | Soporte | CU-05, CU-06, CU-07 |
+| CUN-04 | Analizar títulos más vendidos | Gerencia | Gerencial | CU-04 |
+
+### 4.1 CUN-01 · Vender libros (expandido)
+
+| Campo | Detalle |
+|-------|---------|
+| Nombre | Vender libros |
+| Actores | Cliente (actor del negocio); Vendedor y Encargado de inventario (trabajadores) |
+| Propósito | Entregar al cliente los libros que solicita y dejar constancia de la venta. |
+| Resumen | Inicia cuando el cliente pide uno o más títulos. El vendedor confirma la disponibilidad, cobra y registra la venta; termina cuando el cliente recibe los libros y las existencias quedan actualizadas. |
+| Prioridad | Alta |
+| Mejoras | Hoy la disponibilidad se revisa a mano en estanterías y la venta se anota en papel; la plataforma lo hace en línea y alimenta el ranking. |
+
+**Curso normal**
+
+| Acción del actor | Respuesta del negocio |
+|------------------|-----------------------|
+| 1. El cliente solicita uno o más títulos. | |
+| | 2. El vendedor busca el título en el catálogo. |
+| | 3. El vendedor confirma que hay existencias suficientes. |
+| | 4. El vendedor cobra y registra la venta con la fecha. |
+| | 5. El encargado de inventario ve reflejada la baja de existencias. |
+| 6. El cliente recibe los libros. | |
+
+**Cursos alternos**
+
+- 3a. No hay existencias suficientes: el vendedor ofrece la cantidad disponible o un título similar; si el cliente no acepta, no se registra la venta.
+- 2a. El título no está en el catálogo: el vendedor lo anota como solicitud para CUN-03.
+
+## 5. Casos de uso del sistema de alto nivel
+
+### 5.1 Core del sistema
+
+![CDU alto nivel — core del sistema](../diagramas/cdu-alto-nivel.svg)
+
+El **Administrador** especializa al **Cliente**: hereda la consulta del catálogo y agrega la
+gestión del catálogo y de las ventas.
+
+### 5.2 Primera descomposición
+
+![CDU — primera descomposición](../diagramas/cdu-primera-descomposicion.svg)
 
 | Código | Caso de uso | Actor | Microservicio |
 |--------|-------------|-------|---------------|
@@ -107,7 +135,7 @@ flowchart LR
 | CU-08 | Registrar venta | Administrador | Ventas (+ Libros) |
 | CU-09 | Consultar historial de ventas | Administrador | Ventas |
 
-## 5. Casos de uso expandidos (drivers funcionales)
+## 6. Casos de uso del sistema expandidos (drivers funcionales)
 
 ### CU-01 · Listar libros
 
@@ -115,6 +143,9 @@ flowchart LR
 |-------|---------|
 | Actores | Cliente, Administrador |
 | Propósito | Mostrar los libros del catálogo con título, autor, precio y existencias. |
+| Resumen | Inicia cuando el usuario entra al catálogo y termina cuando ve la página de libros solicitada, ordenada y con el total de resultados. |
+| Prioridad | Alta |
+| Mejoras | Reemplaza la consulta manual en estanterías; la información de existencias está siempre al día. |
 | Precondición | El microservicio de Libros está disponible. |
 | Postcondición | El usuario ve una página del catálogo. |
 | Requisitos | RF-01, RF-02, RNF-02 |
@@ -140,6 +171,9 @@ flowchart LR
 |-------|---------|
 | Actores | Cliente, Administrador |
 | Propósito | Localizar libros por título o autor. |
+| Resumen | Inicia cuando el usuario escribe o elige un filtro y termina cuando el listado muestra solo los libros que coinciden con todos los criterios. |
+| Prioridad | Alta |
+| Mejoras | Búsqueda tolerante a tildes y mayúsculas; los filtros quedan en la URL para compartir la búsqueda. |
 | Precondición | El usuario está en la vista de catálogo. |
 | Postcondición | El listado muestra solo los libros que coinciden. |
 | Requisitos | RF-03, RF-04, RF-05, RNF-02 |
@@ -165,6 +199,9 @@ flowchart LR
 |-------|---------|
 | Actores | Cliente, Administrador |
 | Propósito | Conocer los títulos con más unidades vendidas. |
+| Resumen | Inicia cuando el usuario abre «Más vendidos» y termina cuando ve el top de libros del período elegido. |
+| Prioridad | Alta |
+| Mejoras | La gerencia deja de calcular el ranking a mano; los clientes reciben recomendaciones basadas en ventas reales. |
 | Precondición | El microservicio de Ventas está disponible. |
 | Postcondición | Se muestra el top de libros ordenado por unidades vendidas. |
 | Requisitos | RF-09, RF-10, RNF-02 |
@@ -191,6 +228,9 @@ flowchart LR
 |-------|---------|
 | Actores | Administrador |
 | Propósito | Agregar un título nuevo al catálogo. |
+| Resumen | Inicia cuando el administrador abre el formulario de nuevo libro y termina cuando el libro queda visible en el catálogo. |
+| Prioridad | Alta |
+| Mejoras | Validación inmediata de datos e ISBN único; el catálogo se actualiza para todos al instante. |
 | Precondición | El administrador envía la llave de administración válida. |
 | Postcondición | El libro queda disponible en el catálogo. |
 | Requisitos | RF-06, RNF-04 |
@@ -216,6 +256,9 @@ flowchart LR
 |-------|---------|
 | Actores | Administrador |
 | Propósito | Registrar la venta de un libro para que cuente en el ranking. |
+| Resumen | Inicia cuando el administrador elige un libro y una cantidad, y termina cuando la venta queda registrada y las existencias disminuyen, o se rechaza sin cambiar nada. |
+| Prioridad | Alta |
+| Mejoras | El descuento atómico evita vender unidades inexistentes, incluso con ventas simultáneas; cada venta alimenta el ranking. |
 | Precondición | El libro existe y el administrador envía la llave válida. |
 | Postcondición | La venta queda guardada con fecha y las existencias del libro disminuyen. |
 | Requisitos | RF-07, RF-08, RNF-04, RNF-05 |
@@ -240,7 +283,7 @@ flowchart LR
 - 6a. Falla al guardar la venta después de descontar: Ventas ejecuta la compensación (devuelve las existencias a Libros) y responde `500`.
 - 3b. Libros no responde: responde `503` y no se guarda la venta.
 
-## 6. Requisitos funcionales
+## 7. Requisitos funcionales
 
 | ID | Requisito | Prioridad |
 |----|-----------|-----------|
@@ -256,7 +299,7 @@ flowchart LR
 | RF-10 | Filtrar el ranking por rango de fechas y limitar el número de resultados. | Media |
 | RF-11 | Consultar el historial de ventas paginado (solo administrador). | Media |
 
-## 7. Drivers de atributos de calidad
+## 8. Drivers de atributos de calidad
 
 Cada atributo se expresa como un escenario: **estímulo → respuesta → medida**.
 
@@ -271,7 +314,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | RNF-07 | Portabilidad / reproducibilidad | Se necesita recrear el entorno desde cero. | `terraform apply` + `ansible-playbook` levantan todo sin pasos manuales en menos de 30 min. | Infraestructura como código, imágenes Docker versionadas en ECR. |
 | RNF-08 | Observabilidad | Un error ocurre en una petición que pasa por varios servicios. | Se puede rastrear con un único identificador en los logs de todos los servicios. | Encabezado `X-Request-Id` propagado por el gateway, logs estructurados en JSON. |
 
-## 8. Drivers de restricción
+## 9. Drivers de restricción
 
 | ID | Restricción | Origen |
 |----|-------------|--------|
@@ -285,9 +328,9 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | RES-08 | Documentación en Markdown dentro del repositorio. | Enunciado |
 | RES-09 | Fecha de entrega: 22 de octubre de 2026. | Cronograma |
 
-## 9. Matrices de trazabilidad
+## 10. Matrices de trazabilidad
 
-### 9.1 Casos de uso ↔ requisitos funcionales
+### 10.1 Casos de uso ↔ requisitos funcionales
 
 | CU \ RF | RF-01 | RF-02 | RF-03 | RF-04 | RF-05 | RF-06 | RF-07 | RF-08 | RF-09 | RF-10 | RF-11 |
 |---------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
@@ -301,7 +344,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | CU-08 | | | | | | | ● | ● | | | |
 | CU-09 | | | | | | | | | | | ● |
 
-### 9.2 Requisitos ↔ componentes
+### 10.2 Requisitos ↔ componentes
 
 | Requisito | Frontend | API Gateway | Libros | Ventas | RDS | Terraform | Ansible |
 |-----------|:--------:|:-----------:|:------:|:------:|:---:|:---------:|:-------:|
@@ -315,7 +358,16 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | RNF-07 | | | | | | ● | ● |
 | RNF-08 | | ● | ● | ● | | | |
 
-### 9.3 Componentes ↔ responsables
+### 10.3 Casos de uso del negocio ↔ casos de uso del sistema
+
+| CUN \ CU | CU-01 | CU-02 | CU-03 | CU-04 | CU-05 | CU-06 | CU-07 | CU-08 | CU-09 |
+|----------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
+| CUN-01 Vender libros | | | | | | | | ● | ● |
+| CUN-02 Informar disponibilidad | ● | ● | ● | | | | | | |
+| CUN-03 Abastecer catálogo | | | | | ● | ● | ● | | |
+| CUN-04 Analizar más vendidos | | | | ● | | | | | |
+
+### 10.4 Componentes ↔ responsables
 
 | Componente | Responsable | Carnet |
 |------------|-------------|--------|
