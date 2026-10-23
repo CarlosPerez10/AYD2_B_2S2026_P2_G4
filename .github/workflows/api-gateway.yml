@@ -46,7 +46,7 @@ jobs:
           docker run -d --name gateway -p 8080:8080 \
             -e ADMIN_API_KEY=llave-de-integracion-continua \
             libreria-ayd/api-gateway:${{ github.sha }}
-          for intento in $(seq 1 15); do
+          for _ in $(seq 1 15); do
             if curl -fsS http://localhost:8080/health; then exit 0; fi
             sleep 2
           done
