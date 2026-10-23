@@ -1,0 +1,61 @@
+name: libros
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/libros/**"
+      - ".github/workflows/libros.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/libros/**"
+      - ".github/workflows/libros.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/libros
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: services/libros/package-lock.json
+
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run test:coverage
+
+  imagen:
+    runs-on: ubuntu-latest
+    needs: pruebas
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construye la imagen
+        run: docker build -t libreria-ayd/libros:${{ github.sha }} services/libros
+      - name: Verifica que arranque, migre y responda sano contra PostgreSQL
+        run: |
+          docker network create ci
+          docker run -d --name libros-db --network ci \
+            -e POSTGRES_DB=libros_db -e POSTGRES_USER=libros -e POSTGRES_PASSWORD=ci-123 \
+            postgres:16-alpine
+          until docker exec libros-db pg_isready -h 127.0.0.1 -U libros -d libros_db; do sleep 1; done
+          docker run -d --name libros --network ci -p 3001:3001 \
+            -e DB_HOST=libros-db -e DB_PASSWORD=ci-123 \
+            libreria-ayd/libros:${{ github.sha }}
+          for intento in $(seq 1 15); do
+            if curl -fsS http://localhost:3001/health; then
+              curl -fsS "http://localhost:3001/api/v1/libros?q=garcia" | grep -q "García Márquez" && exit 0
+            fi
+            sleep 2
+          done
+          docker logs libros
+          exit 1
