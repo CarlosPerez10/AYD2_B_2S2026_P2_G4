@@ -6,6 +6,23 @@ sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.0.0] - 2026-10-22
+
+Versión lista para desplegar en AWS.
+
+### Agregado
+
+- `infra/scripts/preparar-wsl.sh`: instala Terraform, AWS CLI v2, Ansible y jq en Ubuntu/WSL.
+- `infra/scripts/desplegar.sh`: despliegue completo con un comando (Terraform → ECR → Ansible),
+  con verificación previa de herramientas, credenciales, secretos y permisos de la llave SSH.
+- `infra/scripts/destruir.sh`: elimina la infraestructura con confirmación.
+- Guía de despliegue paso a paso para Windows + WSL y AWS Academy, con lista de evidencias.
+- Límite de peticiones del gateway configurable desde Ansible para pruebas de carga en AWS.
+
+### Cambiado
+
+- Todos los componentes pasan a la versión 1.0.0.
+
 ## [0.2.0] - 2026-10-22
 
 Infraestructura como código validada, documentación alineada con la metodología del curso y
@@ -66,6 +83,7 @@ Primera versión funcional: la plataforma completa corre en local con `docker co
 - Nginx resolvía el gateway solo al arrancar; ahora lo resuelve en cada petición.
 - El mensaje de existencias insuficientes no concordaba en número ("1 unidades").
 
-[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.2.0...develop
+[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.0...develop
+[1.0.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/releases/tag/v0.1.0
