@@ -12,6 +12,12 @@ export class ApiError extends Error {
   }
 }
 
+function mensajeExistencias({ existencias, titulo }) {
+  if (existencias === 0) return `No quedan unidades disponibles de "${titulo}".`;
+  if (existencias === 1) return `Solo queda 1 unidad disponible de "${titulo}".`;
+  return `Solo hay ${existencias} unidades disponibles de "${titulo}".`;
+}
+
 export const errores = {
   validacion: (detalles) => new ApiError(400, 'VALIDACION', 'Los datos enviados no son válidos.', detalles),
   noEncontrado: (mensaje) => new ApiError(404, 'NO_ENCONTRADO', mensaje),
@@ -21,7 +27,7 @@ export const errores = {
     new ApiError(
       409,
       'EXISTENCIAS_INSUFICIENTES',
-      `Solo hay ${libro.existencias} unidades disponibles de "${libro.titulo}".`,
+      mensajeExistencias(libro),
       { disponibles: libro.existencias, solicitadas },
     ),
   cuerpoDemasiadoGrande: () =>
