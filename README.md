@@ -63,6 +63,9 @@ flowchart LR
 | [Decisiones de arquitectura](docs/arquitectura/adr/) | Registro de decisiones (ADR) |
 | [Diagramas UML](docs/diagramas/) | Casos de uso, bloques, componentes, despliegue y distribución |
 | [Manual de usuario](docs/manuales/manual-usuario.md) | Uso de la plataforma web |
+| [Guía de despliegue](docs/manuales/guia-despliegue.md) | Terraform, ECR y Ansible en AWS |
+| [Despliegue paso a paso](docs/manuales/despliegue-paso-a-paso.md) | Lista de verificación para Windows + WSL |
+| [Prueba de carga](tests/carga/README.md) | Escenario k6 y resultados (RNF-02) |
 | [Guía de contribución](CONTRIBUTING.md) | Ramas, commits y pull requests |
 
 ## Ejecución local
