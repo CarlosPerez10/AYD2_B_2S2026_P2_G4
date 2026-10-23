@@ -1,6 +1,6 @@
 {
   "name": "@libreria-ayd/api-gateway",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Punto de entrada único de la Librería AYD: enrutamiento, autenticación de administrador y trazabilidad",
   "private": true,
   "type": "module",

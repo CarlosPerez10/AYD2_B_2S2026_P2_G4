@@ -1,6 +1,6 @@
 {
   "name": "@libreria-ayd/ventas",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Microservicio de Ventas de la Librería AYD: registro de ventas y ranking de más vendidos",
   "private": true,
   "type": "module",
