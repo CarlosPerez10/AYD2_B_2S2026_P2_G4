@@ -23,6 +23,7 @@
       VENTAS_SERVICE_URL: "http://{{ ip_privada_ventas }}:3002"
       # Un salto de proxy confiable: el ALB.
       TRUST_PROXY_HOPS: "1"
+      RATE_LIMIT_MAX: "{{ limite_peticiones_gateway | string }}"
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/health > /dev/null || exit 1"]
       interval: 15s

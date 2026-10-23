@@ -8,6 +8,10 @@ red_docker: libreria
 
 nivel_log: info
 
+# Peticiones por minuto e IP en el gateway. Solo se sube para pruebas de carga:
+#   ansible-playbook site.yml -l frontend,localhost -e limite_peticiones_gateway=100000 ...
+limite_peticiones_gateway: 300
+
 # Secretos (definidos en vault.yml, cifrado con ansible-vault).
 admin_api_key: "{{ vault_admin_api_key }}"
 libros_db_password: "{{ vault_libros_db_password }}"
