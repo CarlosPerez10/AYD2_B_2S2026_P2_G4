@@ -1,0 +1,28 @@
+@startuml cdu-alto-nivel
+' CDU de alto nivel — core del sistema
+title CDU Alto Nivel — Core del Sistema
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Cliente" as cliente
+actor "Administrador" as admin
+actor "Operador de\ninfraestructura" as operador
+actor "AWS" as aws <<sistema externo>>
+
+cliente <|-- admin
+
+rectangle "Librería AYD" {
+  usecase "Consultar\ncatálogo" as consultar
+  usecase "Gestionar\ncatálogo" as gestionar
+  usecase "Gestionar\nventas" as ventas
+  usecase "Aprovisionar y\ndesplegar plataforma" as desplegar
+}
+
+cliente -- consultar
+admin -- gestionar
+admin -- ventas
+operador -- desplegar
+desplegar -- aws
+@enduml
