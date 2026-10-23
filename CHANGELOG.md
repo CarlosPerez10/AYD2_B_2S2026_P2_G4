@@ -6,6 +6,13 @@ sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+### Agregado
+
+- Diagramas en draw.io (fuente `.drawio` editable y PNG) para los 15 diagramas del proyecto;
+  reemplazan las versiones en PlantUML y Mermaid.
+- CloudFront con HTTPS delante del ALB: URL `https://<id>.cloudfront.net` que abre en celulares
+  (salida `url_https` de Terraform).
+
 ## [1.0.2] - 2026-10-22
 
 ### Corregido
