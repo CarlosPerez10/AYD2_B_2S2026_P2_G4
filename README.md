@@ -61,6 +61,7 @@ flowchart LR
 | [Arquitectura de despliegue](docs/arquitectura/03-despliegue.md) | Diagrama UML de despliegue y papel de Terraform y Ansible |
 | [Contratos de API](docs/arquitectura/04-contratos-api.md) | Endpoints, modelos y errores (OpenAPI en [`docs/api/`](docs/api/)) |
 | [Decisiones de arquitectura](docs/arquitectura/adr/) | Registro de decisiones (ADR) |
+| [Diagramas UML](docs/diagramas/) | Casos de uso, bloques, componentes, despliegue y distribución |
 | [Manual de usuario](docs/manuales/manual-usuario.md) | Uso de la plataforma web |
 | [Guía de contribución](CONTRIBUTING.md) | Ramas, commits y pull requests |
 
