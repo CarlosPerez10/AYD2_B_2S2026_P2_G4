@@ -56,7 +56,7 @@ flowchart LR
 
 | Documento | Descripción |
 |-----------|-------------|
-| [Requerimientos y drivers](docs/arquitectura/01-requerimientos.md) | Actores, casos de uso, drivers funcionales, de calidad y de restricción |
+| [Requerimientos y drivers](docs/arquitectura/01-requerimientos.md) | Características, casos de uso del negocio y del sistema, drivers y matrices de trazabilidad |
 | [Arquitectura lógica](docs/arquitectura/02-arquitectura.md) | Patrón, capas, componentes y decisiones de diseño |
 | [Arquitectura de despliegue](docs/arquitectura/03-despliegue.md) | Diagrama UML de despliegue y papel de Terraform y Ansible |
 | [Contratos de API](docs/arquitectura/04-contratos-api.md) | Endpoints, modelos y errores (OpenAPI en [`docs/api/`](docs/api/)) |
@@ -102,6 +102,20 @@ docker compose up --build --no-deps api-gateway
 | `ventas` | Las mismas de base de datos, más `LIBROS_SERVICE_URL` |
 | `api-gateway` | Ver [`api-gateway/README.md`](api-gateway/README.md#variables-de-entorno) |
 | `frontend` | Usa rutas relativas `/api/v1/...`; Nginx reenvía `/api/` a `api-gateway:8080` en local y el ALB lo hace en AWS |
+
+## Despliegue en AWS
+
+Desde Ubuntu (WSL) o Linux, con las credenciales de AWS configuradas:
+
+```bash
+./infra/scripts/preparar-wsl.sh        # una sola vez: Terraform, AWS CLI, Ansible, jq
+./infra/scripts/desplegar.sh 1.0.0     # Terraform → imágenes en ECR → Ansible
+./infra/scripts/destruir.sh            # al terminar
+```
+
+Antes de desplegar hay que completar `infra/terraform/terraform.tfvars` y
+`infra/ansible/group_vars/all/vault.yml` a partir de sus plantillas. Instrucciones completas en
+[despliegue paso a paso](docs/manuales/despliegue-paso-a-paso.md).
 
 ## Flujo de trabajo
 
