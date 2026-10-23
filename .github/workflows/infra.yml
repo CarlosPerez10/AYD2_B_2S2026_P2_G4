@@ -1,0 +1,51 @@
+name: infra
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  ansible:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/ansible
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ansible-core ansible-lint
+      - run: ansible-galaxy collection install -r requirements.yml
+      - name: Prepara inventario y secretos de ejemplo
+        run: |
+          cp inventory/hosts.ini.example inventory/hosts.ini
+          cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+      - run: ansible-playbook site.yml --syntax-check
+      - run: ansible-lint site.yml roles
+      - run: bash -n scripts/generar-inventario.sh ../scripts/build-push.sh
