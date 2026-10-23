@@ -1,0 +1,33 @@
+/**
+ * Error con significado HTTP. Todo lo que no sea ApiError se responde como 500
+ * sin exponer detalles internos.
+ */
+export class ApiError extends Error {
+  constructor(estado, codigo, mensaje, detalles) {
+    super(mensaje);
+    this.name = 'ApiError';
+    this.estado = estado;
+    this.codigo = codigo;
+    this.detalles = detalles;
+  }
+}
+
+export const errores = {
+  validacion: (detalles) => new ApiError(400, 'VALIDACION', 'Los datos enviados no son válidos.', detalles),
+  noEncontrado: (mensaje) => new ApiError(404, 'NO_ENCONTRADO', mensaje),
+  ventaNoEncontrada: (id) => new ApiError(404, 'NO_ENCONTRADO', `No existe la venta con id ${id}.`),
+  existenciasInsuficientes: (mensaje, detalles) => new ApiError(409, 'EXISTENCIAS_INSUFICIENTES', mensaje, detalles),
+  cuerpoDemasiadoGrande: () =>
+    new ApiError(413, 'CUERPO_DEMASIADO_GRANDE', 'El cuerpo de la petición supera el tamaño permitido.'),
+  interno: () => new ApiError(500, 'ERROR_INTERNO', 'Ocurrió un error inesperado.'),
+  ventaNoRegistrada: () =>
+    new ApiError(500, 'ERROR_INTERNO', 'No se pudo registrar la venta. Las existencias no fueron modificadas.'),
+  librosNoDisponible: () =>
+    new ApiError(503, 'SERVICIO_NO_DISPONIBLE', 'El servicio de libros no está disponible.'),
+};
+
+export function cuerpoDeError(error, requestId) {
+  const cuerpo = { codigo: error.codigo, mensaje: error.message, requestId };
+  if (error.detalles !== undefined) cuerpo.detalles = error.detalles;
+  return { error: cuerpo };
+}
