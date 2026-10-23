@@ -99,6 +99,21 @@ flowchart TB
 | Amazon ECR | `«artifact repository»` | Registro privado de imágenes. |
 | Terraform / Ansible | `«executionEnvironment»` | Herramientas que corren en el equipo del operador. |
 
+### 2.2 Diagrama de distribución
+
+Muestra **dónde** queda físicamente cada nodo: región, zonas de disponibilidad y subredes.
+Fuente: [`docs/diagramas/distribucion.puml`](../diagramas/distribucion.puml).
+
+![Diagrama de distribución](../diagramas/distribucion.svg)
+
+| Zona | Subred pública | Subred privada |
+|------|----------------|----------------|
+| us-east-1a | ALB (nodo a), EC2 frontend, EC2 libros | RDS `libros_db` (según ubicación asignada por AWS) |
+| us-east-1b | ALB (nodo b), EC2 ventas | RDS `ventas_db` (según ubicación asignada por AWS) |
+
+Repartir las VMs en dos zonas evita que la caída de una zona deje fuera a todos los
+microservicios a la vez; el ALB opera en ambas.
+
 ## 3. Red y seguridad
 
 ### 3.1 Direccionamiento
