@@ -62,12 +62,22 @@ export ANSIBLE_CONFIG="$DIR_ANSIBLE/ansible.cfg"
 cd "$DIR_ANSIBLE"
 ansible-galaxy collection install -r requirements.yml
 
+# La contraseña de Vault se pide una sola vez y se reutiliza en los dos comandos: el
+# inventario carga group_vars/all/vault.yml incluso en comandos sueltos como el de espera.
+if [ -z "${ANSIBLE_VAULT_PASSWORD_FILE:-}" ]; then
+  read -r -s -p "Contraseña de Vault: " contrasena_vault
+  echo
+  archivo_vault="$(mktemp)"
+  trap 'rm -f "$archivo_vault"' EXIT
+  printf '%s' "$contrasena_vault" > "$archivo_vault"
+  unset contrasena_vault
+  export ANSIBLE_VAULT_PASSWORD_FILE="$archivo_vault"
+fi
+
 echo "Esperando a que las VMs acepten SSH…"
 ansible all -m ansible.builtin.wait_for_connection -a "timeout=300"
 
-argumentos_vault=(--ask-vault-pass)
-[ -n "${ANSIBLE_VAULT_PASSWORD_FILE:-}" ] && argumentos_vault=()
-ansible-playbook site.yml "${argumentos_vault[@]}" -e "version_imagen=$VERSION"
+ansible-playbook site.yml -e "version_imagen=$VERSION"
 
 paso "Despliegue terminado"
 dns="$(terraform -chdir="$DIR_TF" output -raw dns_alb)"
