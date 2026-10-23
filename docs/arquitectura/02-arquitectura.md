@@ -17,30 +17,7 @@ administrador, límite de peticiones, CORS, trazabilidad y manejo uniforme de er
 
 ## 2. Diagrama de bloques
 
-```mermaid
-flowchart TB
-    subgraph Presentacion[Capa de presentación]
-        FE[Frontend SPA]
-    end
-    subgraph Borde[Capa de borde]
-        ALB[Balanceador de carga]
-        GW[API Gateway]
-    end
-    subgraph Negocio[Capa de servicios de negocio]
-        LIB[Microservicio Libros]
-        VEN[Microservicio Ventas]
-    end
-    subgraph Datos[Capa de datos]
-        DBL[(libros_db)]
-        DBV[(ventas_db)]
-    end
-    FE --> ALB --> GW
-    GW --> LIB
-    GW --> VEN
-    VEN -->|REST interno| LIB
-    LIB --> DBL
-    VEN --> DBV
-```
+![Diagrama de bloques](../diagramas/bloques.png)
 
 ### 2.1 Perspectiva basada en eventos
 
@@ -49,7 +26,7 @@ El siguiente diagrama muestra cómo se integra un **bus de eventos** con el mode
 publicador/suscriptor cuando aparezcan más consumidores de una venta, sin cambiar los
 contratos públicos:
 
-![Diagrama de bloques con bus de eventos](../diagramas/bloques-eventos.svg)
+![Diagrama de bloques con bus de eventos](../diagramas/bloques-eventos.png)
 
 | Elemento | Rol | Evento |
 |----------|-----|--------|
@@ -72,15 +49,7 @@ tocar Ventas y escalado independiente del procesamiento de eventos.
 
 Libros y Ventas tienen la misma estructura interna:
 
-```mermaid
-flowchart TB
-    R[routes<br/>define rutas y versión de la API] --> C[controllers<br/>traduce HTTP ↔ dominio]
-    C --> V[validators<br/>valida entrada]
-    C --> S[services<br/>reglas de negocio]
-    S --> RP[repositories<br/>consultas SQL]
-    S --> CL[clients<br/>llamadas a otros servicios]
-    RP --> DB[(PostgreSQL)]
-```
+![Perspectiva lógica: capas de cada microservicio](../diagramas/capas-microservicio.png)
 
 | Capa | Responsabilidad | No debe |
 |------|-----------------|---------|
@@ -114,10 +83,10 @@ services/<servicio>/
 
 ## 4. Diagrama de componentes
 
-Fuente: [`docs/diagramas/componentes.puml`](../diagramas/componentes.puml). Cada conector
+Fuente editable: [`docs/diagramas/componentes.drawio`](../diagramas/componentes.drawio). Cada conector
 une una **interfaz provista** (círculo) con el componente que la **requiere** (semicírculo).
 
-![Diagrama de componentes](../diagramas/componentes.svg)
+![Diagrama de componentes](../diagramas/componentes.png)
 
 | Interfaz | Provista por | Requerida por |
 |----------|--------------|---------------|
@@ -137,21 +106,9 @@ Cada microservicio tiene **su propia base de datos PostgreSQL**, aprovisionada e
 con Terraform. No existen llaves foráneas entre bases: `ventas.libro_id` es una referencia
 lógica al identificador del libro en el servicio de Libros.
 
-### 5.1 `libros_db`
+![Modelo de persistencia](../diagramas/modelo-datos.png)
 
-```mermaid
-erDiagram
-    LIBRO {
-        int id PK
-        varchar isbn UK "13 dígitos, opcional"
-        varchar titulo "NOT NULL"
-        varchar autor "NOT NULL"
-        numeric precio "NOT NULL, > 0"
-        int existencias "NOT NULL, >= 0"
-        timestamptz creado_en
-        timestamptz actualizado_en
-    }
-```
+### 5.1 `libros_db`
 
 Índices:
 
@@ -159,20 +116,6 @@ erDiagram
 - `CHECK (existencias >= 0)` como última defensa contra existencias negativas.
 
 ### 5.2 `ventas_db`
-
-```mermaid
-erDiagram
-    VENTA {
-        int id PK
-        int libro_id "referencia lógica a Libros"
-        varchar titulo "copia al momento de la venta"
-        varchar autor "copia al momento de la venta"
-        int cantidad "NOT NULL, > 0"
-        numeric precio_unitario "NOT NULL"
-        numeric total "cantidad * precio_unitario"
-        timestamptz fecha "NOT NULL, por defecto now()"
-    }
-```
 
 Se guarda una copia de título, autor y precio porque la venta es un **hecho histórico**: si
 después cambia el precio o se elimina el libro, el ranking y el historial siguen siendo
@@ -204,41 +147,7 @@ la evolución natural es una vista materializada refrescada al registrar ventas.
 
 ## 6. Flujo de registro de una venta
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor A as Administrador
-    participant FE as Frontend
-    participant GW as API Gateway
-    participant V as Ventas
-    participant L as Libros
-    participant DV as ventas_db
-    participant DL as libros_db
-
-    A->>FE: Selecciona libro y cantidad
-    FE->>GW: POST /api/v1/ventas (X-Api-Key)
-    GW->>GW: Valida llave y asigna X-Request-Id
-    GW->>V: POST /api/v1/ventas
-    V->>L: GET /api/v1/libros/{id}
-    L->>DL: SELECT
-    L-->>V: 200 libro (precio, título, autor)
-    V->>L: POST /internal/v1/libros/{id}/descontar {cantidad}
-    L->>DL: UPDATE ... WHERE existencias >= cantidad
-    alt existencias suficientes
-        L-->>V: 200 existencias actualizadas
-        V->>DV: INSERT venta
-        alt inserción correcta
-            V-->>GW: 201 venta
-        else falla la inserción
-            V->>L: POST /internal/v1/libros/{id}/reponer {cantidad}
-            V-->>GW: 500 error
-        end
-    else sin existencias
-        L-->>V: 409 existencias insuficientes
-        V-->>GW: 409
-    end
-    GW-->>FE: respuesta
-```
+![Diagrama de secuencia: registrar venta](../diagramas/secuencia-venta.png)
 
 El flujo usa una **saga orquestada simple**: Ventas coordina los pasos y, si el último falla,
 ejecuta la acción compensatoria (reponer existencias). Así cada servicio mantiene su

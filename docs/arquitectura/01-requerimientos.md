@@ -63,7 +63,7 @@ Describe los procesos de la librería **independientemente del sistema**: qué h
 para dar valor a sus actores. Los casos de uso del sistema (sección 5) automatizan parte de
 estos procesos.
 
-![Modelo de casos de uso del negocio](../diagramas/cun-negocio.svg)
+![Modelo de casos de uso del negocio](../diagramas/cun-negocio.png)
 
 | Actor del negocio | Rol |
 |-------------------|-----|
@@ -114,14 +114,14 @@ estos procesos.
 
 ### 5.1 Core del sistema
 
-![CDU alto nivel — core del sistema](../diagramas/cdu-alto-nivel.svg)
+![CDU alto nivel — core del sistema](../diagramas/cdu-alto-nivel.png)
 
 El **Administrador** especializa al **Cliente**: hereda la consulta del catálogo y agrega la
 gestión del catálogo y de las ventas.
 
 ### 5.2 Primera descomposición
 
-![CDU — primera descomposición](../diagramas/cdu-primera-descomposicion.svg)
+![CDU — primera descomposición](../diagramas/cdu-primera-descomposicion.png)
 
 | Código | Caso de uso | Actor | Microservicio |
 |--------|-------------|-------|---------------|

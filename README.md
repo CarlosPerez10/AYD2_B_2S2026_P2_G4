@@ -31,17 +31,7 @@ detallada de lo que construye cada integrante, en [`docs/equipo/tareas-por-integ
 
 ## Arquitectura
 
-```mermaid
-flowchart LR
-    U([Usuario<br/>administrador / cliente]) -->|HTTP :80| ALB[Application Load Balancer]
-    ALB -->|/*| FE[Frontend<br/>Nginx + SPA]
-    ALB -->|/api/*| GW[API Gateway<br/>Node.js]
-    GW -->|/api/v1/libros| LIB[Microservicio Libros]
-    GW -->|/api/v1/ventas| VEN[Microservicio Ventas]
-    VEN -->|consulta y descuenta existencias| LIB
-    LIB --> DB1[(RDS PostgreSQL<br/>libros_db)]
-    VEN --> DB2[(RDS PostgreSQL<br/>ventas_db)]
-```
+![Arquitectura general](docs/diagramas/arquitectura-general.png)
 
 | Componente | Tecnología | Puerto | Carpeta |
 |------------|-----------|--------|---------|
