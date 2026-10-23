@@ -1,0 +1,49 @@
+# Configura las tres VMs y despliega los contenedores en orden de dependencia.
+#
+#   ansible-galaxy collection install -r requirements.yml
+#   ./scripts/generar-inventario.sh
+#   ansible-playbook site.yml --ask-vault-pass -e version_imagen=1.0.0
+
+- name: Prepara el sistema operativo y Docker
+  hosts: all
+  become: true
+  roles:
+    - comun
+    - docker
+    - ecr_login
+
+- name: Despliega Libros
+  hosts: libros
+  become: true
+  roles:
+    - despliegue_libros
+
+- name: Despliega Ventas
+  hosts: ventas
+  become: true
+  roles:
+    - despliegue_ventas
+
+- name: Despliega frontend y API Gateway
+  hosts: frontend
+  become: true
+  roles:
+    - despliegue_frontend
+
+- name: Verifica la plataforma a través del balanceador
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Consulta la salud agregada por el DNS del ALB
+      ansible.builtin.uri:
+        url: "http://{{ hostvars[groups['frontend'][0]].dns_alb }}/health/servicios"
+        status_code: 200
+      register: salud_alb
+      until: salud_alb.status == 200
+      retries: 20
+      delay: 10
+
+    - name: Muestra la URL pública
+      ansible.builtin.debug:
+        msg: "Plataforma disponible en http://{{ hostvars[groups['frontend'][0]].dns_alb }}"

@@ -1,0 +1,3 @@
+# El nombre "api-gateway" es obligatorio: frontend/nginx.conf hace proxy_pass a ese host.
+contenedor_gateway: api-gateway
+contenedor_frontend: frontend
