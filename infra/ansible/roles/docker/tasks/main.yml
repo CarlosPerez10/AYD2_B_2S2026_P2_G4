@@ -1,27 +1,20 @@
 # Docker Engine desde el repositorio oficial (no el paquete docker.io de Ubuntu).
-- name: Crea el directorio de llaves de apt
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: "0755"
-
-- name: Descarga la llave GPG de Docker
-  ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    dest: /etc/apt/keyrings/docker.asc
-    mode: "0644"
-
-- name: Agrega el repositorio oficial de Docker
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch={{ arquitecturas[ansible_architecture] | default('amd64') }} signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
-    filename: docker
+# apt_repository está obsoleto desde ansible-core 2.19; deb822_repository necesita python3-debian.
+- name: Instala la dependencia de deb822_repository
+  ansible.builtin.apt:
+    name: python3-debian
     state: present
-  vars:
-    arquitecturas:
-      x86_64: amd64
-      aarch64: arm64
+
+- name: Agrega el repositorio oficial de Docker con su llave
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: https://download.docker.com/linux/ubuntu
+    suites: ["{{ ansible_distribution_release }}"]
+    components: [stable]
+    architectures: ["{{ docker_arquitecturas[ansible_architecture] | default('amd64') }}"]
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+    state: present
 
 - name: Instala Docker Engine y el plugin de Compose
   ansible.builtin.apt:
