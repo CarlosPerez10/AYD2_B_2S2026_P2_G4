@@ -6,6 +6,13 @@ sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.0.1] - 2026-10-22
+
+### Corregido
+
+- `desplegar.sh` fallaba con *no vault secrets found* al esperar la conexión SSH: la
+  contraseña de Vault ahora se pide una sola vez y sirve para todos los comandos de Ansible.
+
 ## [1.0.0] - 2026-10-22
 
 Versión lista para desplegar en AWS.
@@ -83,7 +90,8 @@ Primera versión funcional: la plataforma completa corre en local con `docker co
 - Nginx resolvía el gateway solo al arrancar; ahora lo resuelve en cada petición.
 - El mensaje de existencias insuficientes no concordaba en número ("1 unidades").
 
-[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.0...develop
+[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.1...develop
+[1.0.1]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/releases/tag/v0.1.0
