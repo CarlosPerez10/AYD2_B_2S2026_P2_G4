@@ -6,6 +6,14 @@ sigue [SemVer](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.0.2] - 2026-10-22
+
+### Corregido
+
+- `build-push-ecr` quedaba en rojo en cada tag porque el repositorio no tiene credenciales
+  de AWS; ahora omite la publicación con un aviso.
+- Advertencias de `actionlint` en los workflows de verificación de imágenes.
+
 ## [1.0.1] - 2026-10-22
 
 ### Corregido
@@ -90,7 +98,8 @@ Primera versión funcional: la plataforma completa corre en local con `docker co
 - Nginx resolvía el gateway solo al arrancar; ahora lo resuelve en cada petición.
 - El mensaje de existencias insuficientes no concordaba en número ("1 unidades").
 
-[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.1...develop
+[Sin publicar]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.2...develop
+[1.0.2]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.2.0...v1.0.0
 [0.2.0]: https://github.com/CarlosPerez10/AYD2_B_2S2026_P2_G4/compare/v0.1.0...v0.2.0
