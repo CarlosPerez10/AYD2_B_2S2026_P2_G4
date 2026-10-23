@@ -11,7 +11,7 @@
     owner: "{{ item.usuario }}"
     group: "{{ item.usuario }}"
     mode: "0700"
-  loop: "{{ usuarios_docker }}"
+  loop: "{{ ecr_login_usuarios }}"
 
 - name: Configura Docker para usar ecr-login con el registro del proyecto
   ansible.builtin.copy:
@@ -19,5 +19,5 @@
     owner: "{{ item.usuario }}"
     group: "{{ item.usuario }}"
     mode: "0600"
-    content: "{{ { 'credHelpers': { registro_ecr: 'ecr-login' } } | to_nice_json }}\n"
-  loop: "{{ usuarios_docker }}"
+    content: "{{ {'credHelpers': {registro_ecr: 'ecr-login'}} | to_nice_json }}\n"
+  loop: "{{ ecr_login_usuarios }}"

@@ -4,7 +4,7 @@
 
 - name: Ejecuta la API Gateway
   community.docker.docker_container:
-    name: "{{ contenedor_gateway }}"
+    name: "{{ despliegue_frontend_contenedor_gateway }}"
     image: "{{ registro_ecr }}/api-gateway:{{ version_imagen }}"
     pull: always
     state: started
@@ -35,14 +35,14 @@
   ansible.builtin.uri:
     url: http://127.0.0.1:8080/health
     status_code: 200
-  register: salud_gateway
-  until: salud_gateway.status == 200
+  register: despliegue_frontend_salud_gateway
+  until: despliegue_frontend_salud_gateway.status == 200
   retries: 30
   delay: 5
 
 - name: Ejecuta el frontend
   community.docker.docker_container:
-    name: "{{ contenedor_frontend }}"
+    name: "{{ despliegue_frontend_contenedor_frontend }}"
     image: "{{ registro_ecr }}/frontend:{{ version_imagen }}"
     pull: always
     state: started
@@ -56,7 +56,7 @@
   ansible.builtin.uri:
     url: http://127.0.0.1/
     status_code: 200
-  register: salud_frontend
-  until: salud_frontend.status == 200
+  register: despliegue_frontend_salud_frontend
+  until: despliegue_frontend_salud_frontend.status == 200
   retries: 30
   delay: 5

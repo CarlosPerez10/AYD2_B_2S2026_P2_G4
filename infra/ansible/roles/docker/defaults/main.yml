@@ -1,0 +1,4 @@
+# Arquitectura de Ansible → arquitectura de Debian/Ubuntu.
+docker_arquitecturas:
+  x86_64: amd64
+  aarch64: arm64
