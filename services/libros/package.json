@@ -1,6 +1,6 @@
 {
   "name": "@libreria-ayd/libros",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Microservicio de Libros de la Librería AYD: catálogo, búsqueda y existencias",
   "private": true,
   "type": "module",
