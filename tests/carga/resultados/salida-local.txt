@@ -1,0 +1,30 @@
+     █ búsqueda
+
+       ✓ búsqueda 200
+       ✓ búsqueda trae meta
+
+     █ ranking
+
+       ✓ ranking 200
+
+     checks.........................: 100.00% 10413 out of 10413
+     data_received..................: 17 MB   213 kB/s
+     data_sent......................: 855 kB  11 kB/s
+     group_duration.................: avg=8.32ms   min=5.11ms   med=7.42ms   max=56.04ms  p(90)=11.47ms  p(95)=13.96ms 
+     http_req_blocked...............: avg=27.33µs  min=2.04µs   med=6.42µs   max=3.76ms   p(90)=10.11µs  p(95)=12.04µs 
+     http_req_connecting............: avg=18.75µs  min=0s       med=0s       max=3.61ms   p(90)=0s       p(95)=0s      
+     http_req_duration..............: avg=8.04ms   min=160.89µs med=7.18ms   max=52.37ms  p(90)=11.06ms  p(95)=13.59ms 
+       { expected_response:true }...: avg=8.04ms   min=160.89µs med=7.18ms   max=52.37ms  p(90)=11.06ms  p(95)=13.59ms 
+     ✓ { operacion:busqueda }.......: avg=8.26ms   min=286.58µs med=7.35ms   max=52.37ms  p(90)=11.23ms  p(95)=13.86ms 
+     ✓ { operacion:ranking }........: avg=7.83ms   min=160.89µs med=6.95ms   max=35.06ms  p(90)=10.86ms  p(95)=13.34ms 
+   ✓ http_req_failed................: 0.00%   0 out of 6942
+     http_req_receiving.............: avg=152.91µs min=51.48µs  med=140.25µs max=1.73ms   p(90)=211.58µs p(95)=240.56µs
+     http_req_sending...............: avg=37.65µs  min=7.05µs   med=27.16µs  max=549.51µs p(90)=70.15µs  p(95)=81.71µs 
+     http_req_tls_handshaking.......: avg=0s       min=0s       med=0s       max=0s       p(90)=0s       p(95)=0s      
+     http_req_waiting...............: avg=7.85ms   min=0s       med=6.99ms   max=51.95ms  p(90)=10.85ms  p(95)=13.38ms 
+     http_reqs......................: 6942    88.684375/s
+     iteration_duration.............: avg=1.01s    min=1.01s    med=1.01s    max=1.07s    p(90)=1.02s    p(95)=1.02s   
+     iterations.....................: 3471    44.342187/s
+     vus............................: 4       min=4              max=50
+     vus_max........................: 50      min=50             max=50
+

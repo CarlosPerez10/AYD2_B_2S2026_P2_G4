@@ -35,11 +35,25 @@ docker run --rm -i --network host grafana/k6 run - < tests/carga/busqueda-y-rank
 
 ## Resultados
 
-> **Pendiente de ejecutar.** Completar con la salida real de k6 (no estimar valores).
-
 | Fecha | Entorno | Operación | Peticiones | p95 (ms) | Errores (%) | ¿Cumple? |
 |-------|---------|-----------|-----------:|---------:|------------:|----------|
-| | | búsqueda | | | | |
-| | | ranking | | | | |
+| 2026-10-22 | Local (Docker Compose, `RATE_LIMIT_MAX=100000`) | búsqueda | 3 471 | 13.86 | 0.00 | Sí |
+| 2026-10-22 | Local (Docker Compose, `RATE_LIMIT_MAX=100000`) | ranking | 3 471 | 13.34 | 0.00 | Sí |
+| | AWS (DNS del ALB) | búsqueda | | | | |
+| | AWS (DNS del ALB) | ranking | | | | |
 
-Adjuntar el resumen de k6 en `tests/carga/resultados/` (texto o captura).
+Total local: 6 942 peticiones en 80 s (≈ 89 peticiones/s), 100 % de verificaciones correctas.
+Salida completa de k6 en [`resultados/salida-local.txt`](resultados/salida-local.txt) y
+métricas en [`resultados/resumen-local.json`](resultados/resumen-local.json).
+
+Reproducir en local:
+
+```bash
+# En .env: RATE_LIMIT_MAX=100000, luego
+docker compose up -d --build
+docker run --rm --add-host=host.docker.internal:host-gateway   -e BASE_URL=http://host.docker.internal:8080   -v "$PWD/tests/carga:/carga" grafana/k6:0.54.0 run /carga/busqueda-y-ranking.js
+```
+
+> Un entorno local en un solo equipo no tiene latencia de red real. La fila de AWS se completa
+> después del despliegue con `-e BASE_URL=http://<dns-del-alb>` (restaurando el límite normal
+> del gateway después de la prueba).
