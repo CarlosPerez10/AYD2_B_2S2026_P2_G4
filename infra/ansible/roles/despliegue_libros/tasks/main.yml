@@ -1,0 +1,36 @@
+- name: Ejecuta el contenedor de Libros
+  community.docker.docker_container:
+    name: "{{ contenedor_libros }}"
+    image: "{{ registro_ecr }}/libros:{{ version_imagen }}"
+    pull: always
+    state: started
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ puerto_libros }}:3001"
+    env:
+      NODE_ENV: production
+      PORT: "3001"
+      APP_VERSION: "{{ version_imagen | string }}"
+      LOG_LEVEL: "{{ nivel_log }}"
+      DB_HOST: "{{ rds_libros_host }}"
+      DB_PORT: "5432"
+      DB_NAME: "{{ libros_db_nombre }}"
+      DB_USER: "{{ libros_db_usuario }}"
+      DB_PASSWORD: "{{ libros_db_password }}"
+      DB_SSL: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+  no_log: true # el entorno incluye la contraseña de la base
+
+- name: Espera a que Libros responda sano
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ puerto_libros }}/health"
+    status_code: 200
+  register: salud
+  until: salud.status == 200
+  retries: 30
+  delay: 5

@@ -1,0 +1,7 @@
+# Copiar a vault.yml, completar y cifrar:
+#   cp group_vars/all/vault.yml.example group_vars/all/vault.yml
+#   ansible-vault encrypt group_vars/all/vault.yml
+# Las contraseñas de BD deben ser las mismas de terraform.tfvars.
+vault_admin_api_key: "cambiar-por-una-llave-de-al-menos-16-caracteres"
+vault_libros_db_password: "la-misma-de-contrasena_bd_libros"
+vault_ventas_db_password: "la-misma-de-contrasena_bd_ventas"

@@ -1,0 +1,20 @@
+# Generado por scripts/generar-inventario.sh a partir de `terraform output -json`.
+# No editar a mano: las IPs cambian si se recrea la infraestructura.
+
+[frontend]
+frontend ansible_host=203.0.113.11 ip_privada=10.0.1.11
+
+[libros]
+libros ansible_host=203.0.113.12 ip_privada=10.0.1.12
+
+[ventas]
+ventas ansible_host=203.0.113.13 ip_privada=10.0.2.13
+
+[all:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=~/.ssh/libreria-ayd
+aws_region=us-east-1
+registro_ecr=123456789012.dkr.ecr.us-east-1.amazonaws.com
+rds_libros_host=libreria-ayd-libros.xxxx.us-east-1.rds.amazonaws.com
+rds_ventas_host=libreria-ayd-ventas.xxxx.us-east-1.rds.amazonaws.com
+dns_alb=libreria-ayd-alb-123456.us-east-1.elb.amazonaws.com
