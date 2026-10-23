@@ -1,9 +1,10 @@
 name: build-push-ecr
 
 # Publica las cuatro imágenes en ECR al crear un tag v*. Requiere los secretos
-# AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY y AWS_SESSION_TOKEN (AWS Academy entrega
-# credenciales temporales: hay que actualizarlos en cada sesión del laboratorio) y la
-# variable de repositorio AWS_REGION.
+# AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY (y AWS_SESSION_TOKEN en AWS Academy, cuyas
+# credenciales son temporales) y la variable de repositorio AWS_REGION.
+# Sin esos secretos el workflow termina con un aviso en lugar de fallar: las imágenes
+# también se publican desde el equipo del operador con infra/scripts/desplegar.sh.
 on:
   push:
     tags: ["v*"]
@@ -21,10 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      TIENE_CREDENCIALES: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' }}
     steps:
+      - name: Omite la publicación si no hay credenciales de AWS
+        if: env.TIENE_CREDENCIALES != 'true'
+        run: |
+          echo "::notice title=Publicación omitida::No hay secretos AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY en el repositorio. Las imágenes se publican con infra/scripts/desplegar.sh."
+
       - uses: actions/checkout@v4
+        if: env.TIENE_CREDENCIALES == 'true'
 
       - uses: aws-actions/configure-aws-credentials@v4
+        if: env.TIENE_CREDENCIALES == 'true'
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -32,6 +41,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Calcula versión y registro
+        if: env.TIENE_CREDENCIALES == 'true'
         id: datos
         run: |
           version="${{ inputs.version }}"
@@ -41,6 +51,7 @@ jobs:
           echo "registro=$cuenta.dkr.ecr.$AWS_REGION.amazonaws.com" >> "$GITHUB_OUTPUT"
 
       - name: Construye y publica
+        if: env.TIENE_CREDENCIALES == 'true'
         env:
           REGISTRO_ECR: ${{ steps.datos.outputs.registro }}
         run: ./infra/scripts/build-push.sh "${{ steps.datos.outputs.version }}"

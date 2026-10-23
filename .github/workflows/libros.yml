@@ -51,7 +51,7 @@ jobs:
           docker run -d --name libros --network ci -p 3001:3001 \
             -e DB_HOST=libros-db -e DB_PASSWORD=ci-123 \
             libreria-ayd/libros:${{ github.sha }}
-          for intento in $(seq 1 15); do
+          for _ in $(seq 1 15); do
             if curl -fsS http://localhost:3001/health; then
               curl -fsS "http://localhost:3001/api/v1/libros?q=garcia" | grep -q "García Márquez" && exit 0
             fi

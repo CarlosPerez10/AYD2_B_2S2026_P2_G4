@@ -51,7 +51,7 @@ jobs:
           docker run -d --name ventas --network ci -p 3002:3002 \
             -e DB_HOST=ventas-db -e DB_PASSWORD=ci-123 \
             libreria-ayd/ventas:${{ github.sha }}
-          for intento in $(seq 1 15); do
+          for _ in $(seq 1 15); do
             if curl -fsS http://localhost:3002/health; then
               # El ranking no depende de Libros y la semilla ya trae ventas.
               curl -fsS "http://localhost:3002/api/v1/ventas/ranking" | grep -q '"posicion":1' && exit 0
