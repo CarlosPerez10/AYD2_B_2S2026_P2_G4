@@ -59,16 +59,22 @@ export function crearRepositorioVentas(pool) {
       return rows[0] ? aVenta(rows[0]) : null;
     },
 
-    /** Consulta de 02-arquitectura §5.3. Desempate estable: unidades, monto y título. */
+    /**
+     * Consulta de 02-arquitectura §5.3. Agrupa solo por libro_id: si un libro se renombró,
+     * sus ventas siguen sumando en una sola posición con el título y autor más recientes.
+     * Desempate estable: unidades, monto y título.
+     */
     async ranking({ desde, hasta, limite }) {
       const { rows } = await pool.query(
-        `SELECT libro_id, titulo, autor,
+        `SELECT libro_id,
+                (ARRAY_AGG(titulo ORDER BY fecha DESC, id DESC))[1] AS titulo,
+                (ARRAY_AGG(autor  ORDER BY fecha DESC, id DESC))[1] AS autor,
                 SUM(cantidad) AS unidades_vendidas,
                 SUM(total)    AS monto_total
            FROM venta
           WHERE fecha >= COALESCE($1::timestamptz, '-infinity'::timestamptz)
             AND fecha <  COALESCE($2::timestamptz, 'infinity'::timestamptz)
-          GROUP BY libro_id, titulo, autor
+          GROUP BY libro_id
           ORDER BY unidades_vendidas DESC, monto_total DESC, titulo ASC
           LIMIT $3`,
         [desde ?? null, hasta ?? null, limite],
