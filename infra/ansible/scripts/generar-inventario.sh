@@ -16,7 +16,8 @@ leer() { jq -r "$1" <<< "$salidas"; }
 
 host() {
   local nombre="$1"
-  printf '[%s]\n%s ansible_host=%s ip_privada=%s\n\n' "$nombre" "$nombre" \
+  # El host lleva el sufijo -vm para no llamarse igual que su grupo (advertencia de Ansible).
+  printf '[%s]\n%s-vm ansible_host=%s ip_privada=%s\n\n' "$nombre" "$nombre" \
     "$(leer ".ips_elasticas.value.$nombre")" "$(leer ".ips_privadas.value.$nombre")"
 }
 

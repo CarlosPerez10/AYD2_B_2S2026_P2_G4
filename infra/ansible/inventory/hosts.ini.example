@@ -2,13 +2,13 @@
 # No editar a mano: las IPs cambian si se recrea la infraestructura.
 
 [frontend]
-frontend ansible_host=203.0.113.11 ip_privada=10.0.1.11
+frontend-vm ansible_host=203.0.113.11 ip_privada=10.0.1.11
 
 [libros]
-libros ansible_host=203.0.113.12 ip_privada=10.0.1.12
+libros-vm ansible_host=203.0.113.12 ip_privada=10.0.1.12
 
 [ventas]
-ventas ansible_host=203.0.113.13 ip_privada=10.0.2.13
+ventas-vm ansible_host=203.0.113.13 ip_privada=10.0.2.13
 
 [all:vars]
 ansible_user=ubuntu
