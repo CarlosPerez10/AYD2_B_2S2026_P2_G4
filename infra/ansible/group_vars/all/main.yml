@@ -1,0 +1,24 @@
+# Versión de las imágenes a desplegar: ansible-playbook site.yml -e version_imagen=1.0.0
+version_imagen: latest
+
+zona_horaria: America/Guatemala
+usuario_despliegue: despliegue
+cidr_vpc: 10.0.0.0/16
+red_docker: libreria
+
+nivel_log: info
+
+# Secretos (definidos en vault.yml, cifrado con ansible-vault).
+admin_api_key: "{{ vault_admin_api_key }}"
+libros_db_password: "{{ vault_libros_db_password }}"
+ventas_db_password: "{{ vault_ventas_db_password }}"
+
+# Nombres de bases y usuarios: deben coincidir con infra/terraform/main.tf.
+libros_db_nombre: libros_db
+libros_db_usuario: libros
+ventas_db_nombre: ventas_db
+ventas_db_usuario: ventas
+
+# IP privada de la VM de libros: la usan el gateway y Ventas.
+ip_privada_libros: "{{ hostvars[groups['libros'][0]].ip_privada }}"
+ip_privada_ventas: "{{ hostvars[groups['ventas'][0]].ip_privada }}"

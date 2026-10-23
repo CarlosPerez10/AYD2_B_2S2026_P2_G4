@@ -1,0 +1,62 @@
+# Docker Engine desde el repositorio oficial (no el paquete docker.io de Ubuntu).
+- name: Crea el directorio de llaves de apt
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Descarga la llave GPG de Docker
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Agrega el repositorio oficial de Docker
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ arquitecturas[ansible_architecture] | default('amd64') }} signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+  vars:
+    arquitecturas:
+      x86_64: amd64
+      aarch64: arm64
+
+- name: Instala Docker Engine y el plugin de Compose
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - python3-docker
+    state: present
+    update_cache: true
+
+- name: Configura rotación de logs de los contenedores
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": { "max-size": "10m", "max-file": "3" }
+      }
+  notify: Reinicia Docker
+
+- name: Habilita y arranca Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Agrega usuarios al grupo docker
+  ansible.builtin.user:
+    name: "{{ item }}"
+    groups: docker
+    append: true
+  loop:
+    - "{{ ansible_user }}"
+    - "{{ usuario_despliegue }}"
