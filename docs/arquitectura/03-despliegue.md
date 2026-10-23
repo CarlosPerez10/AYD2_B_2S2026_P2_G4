@@ -11,6 +11,7 @@ infraestructura crea **Terraform** y qué parte configura **Ansible**.
 | Cómputo | 3 instancias EC2 Ubuntu 24.04 `t3.micro`: `frontend`, `libros`, `ventas` | Terraform |
 | IP estáticas | 3 IP elásticas, una por instancia | Terraform |
 | Balanceo | Application Load Balancer público, 2 *target groups* y reglas por ruta | Terraform |
+| HTTPS | Distribución CloudFront con certificado de AWS delante del ALB (`https://<id>.cloudfront.net`) | Terraform |
 | Persistencia | 2 instancias RDS PostgreSQL 16 `db.t3.micro` en subredes privadas | Terraform |
 | Imágenes | 4 repositorios ECR: `frontend`, `api-gateway`, `libros`, `ventas` | Terraform |
 | Permisos | Rol IAM con lectura de ECR asociado a las instancias | Terraform |

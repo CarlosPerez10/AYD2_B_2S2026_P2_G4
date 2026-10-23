@@ -117,6 +117,16 @@ curl -s "http://$ALB/api/v1/libros?q=garcia" | jq '.data[].titulo'
 curl -s "http://$ALB/api/v1/ventas/ranking?limite=3" | jq '.data'
 ```
 
+**URL para compartir (HTTPS, funciona en celulares):**
+
+```bash
+terraform -chdir=infra/terraform output -raw url_https
+```
+
+Los navegadores de celular intentan `https://` primero y el ALB solo escucha en el puerto 80;
+por eso, para abrir la plataforma desde un teléfono use la URL de CloudFront. CloudFront tarda
+unos 5 a 10 minutos en crearse la primera vez.
+
 Abrir `http://<dns_alb>` en el navegador y recorrer el [manual de usuario](manual-usuario.md).
 
 Si algo falla, la tabla de síntomas está en la [guía de despliegue §5](guia-despliegue.md#5-verificación).
