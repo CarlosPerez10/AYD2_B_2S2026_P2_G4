@@ -19,15 +19,7 @@ través del ALB) y las reenvía al microservicio dueño del recurso.
 
 ## Cadena de middlewares
 
-```mermaid
-flowchart LR
-    A[requestId] --> B[registro] --> C[helmet + cors] --> D[rutaSegura]
-    D --> E{/health?}
-    E -- sí --> H[rutas de salud]
-    E -- no --> F{/internal?}
-    F -- sí --> X[404]
-    F -- no --> G[límite /api] --> I[autenticación admin] --> J[proxy libros / ventas] --> K[404] --> L[manejo de errores]
-```
+![Cadena de middlewares](../docs/diagramas/gateway-middlewares.png)
 
 ## Rutas
 

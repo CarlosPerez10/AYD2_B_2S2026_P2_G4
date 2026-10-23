@@ -477,19 +477,7 @@ por el DNS del ALB, y `terraform destroy` deja la cuenta limpia.
 
 ## 7. Dependencias entre integrantes
 
-```mermaid
-flowchart LR
-    C[Carlos<br/>contratos + gateway ✔] --> L[Luis<br/>Libros]
-    C --> E[Eduardo<br/>Ventas]
-    C --> K[Kevin<br/>Frontend]
-    L -->|API interna de existencias| E
-    L --> K
-    E --> K
-    C --> B[Billy<br/>Terraform + Ansible]
-    L -->|imagen Docker| B
-    E -->|imagen Docker| B
-    K -->|imagen Docker| B
-```
+![Dependencias entre integrantes](../diagramas/dependencias-equipo.png)
 
 Nadie tiene que esperar a nadie para empezar:
 
