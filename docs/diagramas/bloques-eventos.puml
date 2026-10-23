@@ -1,0 +1,31 @@
+@startuml bloques-eventos
+' Diagrama de bloques — perspectiva basada en eventos (evolución prevista, ADR-004)
+title Diagrama de Bloques — Integración con Bus de Eventos (evolución)
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam componentStyle rectangle
+left to right direction
+
+rectangle "Frontend" as fe
+rectangle "API Gateway" as gw
+rectangle "Microservicio Ventas\n<<publicador>>" as ven
+queue "Bus de Eventos\n(Amazon SNS + SQS)\nIPublicar / ISuscribir" as bus
+rectangle "Microservicio Libros\n<<suscriptor>>" as lib
+rectangle "Proyección de Ranking\n<<suscriptor>> (futuro)" as rank
+rectangle "Servicio de Notificaciones\n<<suscriptor>> (futuro)" as noti
+
+fe --> gw : HTTP
+gw --> ven : HTTP
+gw --> lib : HTTP
+ven --> bus : publica «VentaRegistrada»
+bus --> lib : «VentaRegistrada»
+bus --> rank : «VentaRegistrada»
+bus --> noti : «NotificacionDeVenta»
+
+note bottom of bus
+  VentaRegistrada {ventaId, libroId, cantidad, total, fecha}
+  NotificacionDeVenta: el bus la deriva de VentaRegistrada.
+  En la versión 1.0 la venta es síncrona (saga REST, ADR-004);
+  el bus se integra sin cambiar los contratos públicos.
+end note
+@enduml
