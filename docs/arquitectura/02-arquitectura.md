@@ -45,20 +45,30 @@ tocar Ventas y escalado independiente del procesamiento de eventos.
 - Un microservicio nunca accede a la base de datos de otro; si necesita datos ajenos, usa la API del dueño.
 - La única dependencia entre servicios es **Ventas → Libros**, para obtener el precio vigente y descontar existencias.
 
-## 3. Perspectiva lógica: capas de cada microservicio
+## 3. Perspectiva lógica: CAPAS / SOA y capas de cada microservicio
 
-Libros y Ventas tienen la misma estructura interna:
+Desde la perspectiva lógica CAPAS / SOA, el sistema se organiza en cinco paquetes con estereotipo `«capa»`:
 
 ![Perspectiva lógica: capas de cada microservicio](../diagramas/capas-microservicio.png)
 
-| Capa | Responsabilidad | No debe |
-|------|-----------------|---------|
-| `routes` | Declarar endpoints y asociarlos a controladores. | Contener lógica. |
-| `controllers` | Leer parámetros, llamar al servicio y armar la respuesta HTTP. | Hablar con la base de datos. |
-| `validators` | Validar y normalizar la entrada; producir errores `400` con detalle por campo. | Conocer la base de datos. |
-| `services` | Aplicar reglas de negocio (descuento de existencias, cálculo del ranking, compensación). | Conocer `req`/`res`. |
-| `repositories` | Ejecutar SQL parametrizado y mapear filas a objetos. | Tomar decisiones de negocio. |
-| `clients` | Encapsular llamadas HTTP a otros microservicios (solo Ventas). | Exponerse fuera del servicio. |
+| Capa (`«capa»`) | Responsabilidad principal | Elementos que la integran |
+|-----------------|---------------------------|---------------------------|
+| **Presentación** | Interacción con el cliente y el administrador en el navegador web. | Aplicación React 18 SPA (`frontend`): vistas de Catálogo, Más vendidos y Administración. |
+| **Servicios web** | Exposición de contratos REST, enrutamiento, autenticación `X-Api-Key`, *rate limit* y trazabilidad. | `api-gateway` (`/api/v1/*`) + capas `routes` y `controllers` de Libros y Ventas. |
+| **Negocio** | Aplicación de reglas de dominio, validaciones, descuento atómico de existencias, saga de ventas con compensación y cálculo del ranking. | Capas `validators` y `services` (`libros.service.js`, `ventas.service.js`). |
+| **Datos** | Acceso a datos mediante SQL parametrizado y mapeo de filas a objetos de dominio sin lógica de negocio. | Capa `repositories` (`libros.repository.js` → `libros_db`, `ventas.repository.js` → `ventas_db`). |
+| **Integración** | Comunicación HTTP interna entre microservicios con manejo de *timeouts* y errores. | Capa `clients` (`librosClient.js` en Ventas hacia `/internal/v1/libros`). |
+
+Dentro de cada microservicio (**Libros** y **Ventas**), esta separación lógica se materializa en la siguiente estructura interna:
+
+| Subcapa interna | Paquete `«capa»` | Responsabilidad | No debe |
+|-----------------|------------------|-----------------|---------|
+| `routes` | Servicios web | Declarar endpoints y asociarlos a controladores. | Contener lógica. |
+| `controllers` | Servicios web | Leer parámetros, llamar al servicio y armar la respuesta HTTP. | Hablar con la base de datos. |
+| `validators` | Negocio | Validar y normalizar la entrada; producir errores `400` con detalle por campo. | Conocer la base de datos. |
+| `services` | Negocio | Aplicar reglas de negocio (descuento de existencias, cálculo del ranking, compensación). | Conocer `req`/`res`. |
+| `repositories` | Datos | Ejecutar SQL parametrizado y mapear filas a objetos. | Tomar decisiones de negocio. |
+| `clients` | Integración | Encapsular llamadas HTTP a otros microservicios (solo Ventas). | Exponerse fuera del servicio. |
 
 Estructura de carpetas esperada:
 
@@ -83,18 +93,18 @@ services/<servicio>/
 
 ## 4. Diagrama de componentes
 
-Fuente editable: [`docs/diagramas/componentes.drawio`](../diagramas/componentes.drawio). Cada conector
-une una **interfaz provista** (círculo) con el componente que la **requiere** (semicírculo).
+Fuente editable: [`docs/diagramas/componentes.drawio`](../diagramas/componentes.drawio). Los componentes (`«Domain Object»`) se agrupan dentro de sus respectivos paquetes `«capa»` (`Presentación`, `Servicios Web / Borde`, `Negocio`, `Datos` e `Integración`), y cada conector une una **interfaz provista** (círculo) con el componente que la **requiere** (flecha discontinua de dependencia).
 
 ![Diagrama de componentes](../diagramas/componentes.png)
 
-| Interfaz | Provista por | Requerida por |
-|----------|--------------|---------------|
-| API pública `/api/v1/*` | API Gateway | Frontend |
-| `ILibros` `/api/v1/libros` | Libros | API Gateway, Ventas |
-| `IExistencias` `/internal/v1/libros` | Libros | Ventas |
-| `IVentas`, `IRanking` `/api/v1/ventas` | Ventas | API Gateway |
-| `ISalud` `/health` | Libros, Ventas | API Gateway (agregador de salud), ALB |
+| Interfaz | Provista por (`«Domain Object»`) | Requerida por (`«Domain Object»`) |
+|----------|----------------------------------|-----------------------------------|
+| `IAPIGateway` (`/api/v1/*`) | `APIGatewayProxyImpl` (Servicios Web) | `VistaCatalogoLibros`, `VistaAdminCatalogo`, `VistaVentasYRanking` (Presentación) |
+| `ServicioCatalogoLibros` (`/api/v1/libros`) | `CatalogoLibrosImpl` (Negocio Libros) | `APIGatewayProxyImpl` (Servicios Web) |
+| `ServicioRegistroYRankingVentas` (`/api/v1/ventas`) | `VentasYRankingImpl` (Negocio Ventas) | `APIGatewayProxyImpl` (Servicios Web) |
+| `DAOLibros` | `DAOLibrosImpl` (Datos Libros) | `CatalogoLibrosImpl` (Negocio Libros) |
+| `DAOVentas` | `DAOVentasImpl` (Datos Ventas) | `VentasYRankingImpl` (Negocio Ventas) |
+| `IExistenciasLibros` (`/internal/v1/libros`) | `LibrosClientImpl` (Integración) → `CatalogoLibrosImpl` | `VentasYRankingImpl` (Negocio Ventas) |
 
 La API interna de Libros (`/internal/v1/...`) solo la usa Ventas. La API Gateway **bloquea**
 cualquier petición externa a rutas `/internal`, y en la nube los grupos de seguridad solo
