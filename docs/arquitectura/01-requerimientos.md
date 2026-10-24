@@ -7,10 +7,18 @@ catálogo de libros y registre las ventas, y para que sus clientes consulten los
 disponibles y los más vendidos. Hoy esta información se lleva de forma manual, lo que hace
 difícil saber qué títulos tienen existencias y cuáles se venden más.
 
-### 1.1 Objetivo del sistema
+![Diagrama de contexto — Sistema Librería AYD](../diagramas/diagrama-contexto.png)
+
+### 1.1 Objetivos de negocio y del sistema
 
 Ofrecer un catálogo consultable en línea, con búsqueda por título o autor, y un ranking de
 los libros más vendidos que se actualice a partir de las transacciones registradas.
+
+| ID | Objetivo de negocio | Criterio de éxito |
+|----|---------------------|-------------------|
+| ON-1 | Digitalizar la consulta de catálogo y disponibilidad de ejemplares para clientes y personal. | Catálogo paginado con búsqueda tolerante a mayúsculas y tildes (`p95 < 500 ms`). |
+| ON-2 | Garantizar el control exacto de existencias y el cálculo en línea de los libros más vendidos. | Descuento atómico sin sobreventa y ranking top por unidades y monto. |
+| ON-3 | Estandarizar el aprovisionamiento y despliegue de los microservicios en la nube pública (AWS). | Recreación automatizada con Terraform y Ansible sobre contenedores en ECR. |
 
 ### 1.2 Alcance
 
@@ -22,28 +30,36 @@ los libros más vendidos que se actualice a partir de las transacciones registra
 | Ranking de libros más vendidos | Gestión de usuarios y contraseñas |
 | Administración del catálogo (crear, editar, eliminar) | Envíos o logística |
 
+#### Plan de entregas por iteración
+
+| Entrega | ID de características a incluir | Descripción |
+|---------|---------------------------------|-------------|
+| **1.0 (Práctica 2)** | CAR-01, CAR-02, CAR-03, CAR-04, CAR-05, CAR-06, CAR-07, CAR-08 | Catálogo en línea, búsqueda y filtros, ranking de más vendidos, administración de catálogo, registro transaccional de ventas, microservicios con API Gateway e IaC completa (Terraform + Ansible + Docker + AWS). |
+| **2.0 (Futura)** | CAR-09, CAR-10 | Integración asíncrona mediante bus de eventos (SNS + SQS) y vista materializada de ranking. |
+| **3.0 (Futura)** | CAR-11 | Alertas automáticas de agotamiento de inventario a gerencia y reportes exportables. |
+
 ### 1.3 Características del sistema
 
-| ID | Característica | Descripción |
-|----|----------------|-------------|
-| CAR-01 | Catálogo en línea | Listado paginado con título, autor, precio y existencias. |
-| CAR-02 | Búsqueda y filtrado | Búsqueda por título o autor sin distinguir mayúsculas ni tildes; filtros por autor, precio y disponibilidad. |
-| CAR-03 | Ranking de más vendidos | Calculado a partir del historial de ventas, filtrable por período. |
-| CAR-04 | Administración del catálogo | Alta, edición y baja de libros protegidas por llave de administración. |
-| CAR-05 | Registro de ventas | Cada venta descuenta existencias de forma atómica y queda en el historial. |
-| CAR-06 | Arquitectura de microservicios | Libros y Ventas independientes detrás de una API Gateway, cada uno con su base de datos. |
-| CAR-07 | Infraestructura como código | Toda la nube se crea con Terraform y se configura con Ansible, de forma reproducible. |
-| CAR-08 | Contenedores | Todos los componentes se distribuyen como imágenes Docker en un registro privado. |
+| ID | Característica | Descripción | Prioridad | Objetivo de negocio asociado |
+|----|----------------|-------------|-----------|------------------------------|
+| CAR-01 | Catálogo en línea | Listado paginado con título, autor, precio y existencias. | Alta | ON-1 |
+| CAR-02 | Búsqueda y filtrado | Búsqueda por título o autor sin distinguir mayúsculas ni tildes; filtros por autor, precio y disponibilidad. | Alta | ON-1 |
+| CAR-03 | Ranking de más vendidos | Calculado a partir del historial de ventas, filtrable por período. | Alta | ON-2 |
+| CAR-04 | Administración del catálogo | Alta, edición y baja de libros protegidas por llave de administración. | Alta | ON-1, ON-2 |
+| CAR-05 | Registro de ventas | Cada venta descuenta existencias de forma atómica y queda en el historial. | Alta | ON-2 |
+| CAR-06 | Arquitectura de microservicios | Libros y Ventas independientes detrás de una API Gateway, cada uno con su base de datos. | Alta | ON-2, ON-3 |
+| CAR-07 | Infraestructura como código | Toda la nube se crea con Terraform y se configura con Ansible, de forma reproducible. | Alta | ON-3 |
+| CAR-08 | Contenedores | Todos los componentes se distribuyen como imágenes Docker en un registro privado. | Alta | ON-3 |
 
 ## 2. Stakeholders
 
-| Stakeholder | Interés | Influencia |
-|-------------|---------|------------|
-| Gerencia de la librería | Saber qué títulos se venden más para decidir compras | Alta |
-| Personal administrativo | Mantener el catálogo al día y registrar ventas rápido | Alta |
-| Clientes | Encontrar libros disponibles y ver recomendaciones (más vendidos) | Media |
-| Equipo de desarrollo (Grupo 4) | Construir y operar la plataforma | Alta |
-| Auxiliar y catedrática del curso | Evaluar arquitectura, IaC y despliegue | Alta |
+| Nombre | Descripción | Responsabilidades |
+|--------|-------------|-------------------|
+| Gerencia de la librería | Dirección comercial de Librería AYD interesada en la rotación de inventario y ventas. | Analizar el ranking de libros más vendidos para decidir compras y reabastecimiento con proveedores. |
+| Personal administrativo | Vendedores y encargados de inventario que operan la librería en el día a día. | Mantener el catálogo actualizado (alta, edición, baja) y registrar cada venta realizada. |
+| Clientes | Lectores y compradores que visitan la plataforma web sin necesidad de registro. | Consultar el catálogo disponible, buscar por título o autor y revisar el ranking de más vendidos. |
+| Equipo de desarrollo y operaciones (Grupo 4) | Arquitecto, desarrolladores de microservicios/frontend e ingeniero DevOps del proyecto. | Diseñar la arquitectura, implementar los servicios, aprovisionar AWS con Terraform y desplegar con Ansible. |
+| Auxiliar y catedrática del curso | Cuerpo docente del Laboratorio de Análisis y Diseño de Sistemas 2. | Evaluar el cumplimiento funcional, arquitectónico, documental y el despliegue automatizado en la nube. |
 
 ## 3. Actores
 
@@ -123,17 +139,21 @@ gestión del catálogo y de las ventas.
 
 ![CDU — primera descomposición](../diagramas/cdu-primera-descomposicion.png)
 
-| Código | Caso de uso | Actor | Microservicio |
-|--------|-------------|-------|---------------|
-| CU-01 | Listar libros | Cliente, Administrador | Libros |
-| CU-02 | Buscar y filtrar libros | Cliente, Administrador | Libros |
-| CU-03 | Ver detalle de libro | Cliente, Administrador | Libros |
-| CU-04 | Consultar ranking de más vendidos | Cliente, Administrador | Ventas |
-| CU-05 | Registrar libro | Administrador | Libros |
-| CU-06 | Actualizar libro | Administrador | Libros |
-| CU-07 | Eliminar libro | Administrador | Libros |
-| CU-08 | Registrar venta | Administrador | Ventas (+ Libros) |
-| CU-09 | Consultar historial de ventas | Administrador | Ventas |
+### 5.3 Diagrama de casos de uso expandidos (drivers funcionales)
+
+![CDU expandidos — drivers funcionales](../diagramas/cdu-expandidos.png)
+
+| ID | Caso de uso | Descripción | Característica asociada | Actor | Microservicio |
+|----|-------------|-------------|-------------------------|-------|---------------|
+| CU-01 | Listar libros | Consulta paginada del catálogo con título, autor, precio y existencias. | CAR-01 | Cliente, Administrador | Libros |
+| CU-02 | Buscar y filtrar libros | Búsqueda parcial por título o autor (sin distinguir tildes ni mayúsculas) y filtros combinables. | CAR-02 | Cliente, Administrador | Libros |
+| CU-03 | Ver detalle de libro | Visualización de ISBN, precio, existencias y fecha de actualización de un ejemplar. | CAR-01 | Cliente, Administrador | Libros |
+| CU-04 | Consultar ranking de más vendidos | Cálculo del top de libros por unidades vendidas y monto total, filtrable por fechas. | CAR-03 | Cliente, Administrador | Ventas |
+| CU-05 | Registrar libro | Alta de un nuevo título en el catálogo validando ISBN único y llave de administración. | CAR-04 | Administrador | Libros |
+| CU-06 | Actualizar libro | Modificación de datos y existencias de un libro existente en el catálogo. | CAR-04 | Administrador | Libros |
+| CU-07 | Eliminar libro | Baja de un libro del catálogo protegida por llave de administración. | CAR-04 | Administrador | Libros |
+| CU-08 | Registrar venta | Registro transaccional de una venta con descuento atómico de existencias y compensación ante fallos. | CAR-05 | Administrador | Ventas (+ Libros) |
+| CU-09 | Consultar historial de ventas | Consulta paginada de las transacciones registradas en orden cronológico inverso. | CAR-05 | Administrador | Ventas |
 
 ## 6. Casos de uso del sistema expandidos (drivers funcionales)
 
@@ -301,36 +321,59 @@ gestión del catálogo y de las ventas.
 
 ## 8. Drivers de atributos de calidad
 
-Cada atributo se expresa como un escenario: **estímulo → respuesta → medida**.
+Cada atributo de calidad se modela mediante escenarios formales de 6 partes (**fuente de estímulo → estímulo → artefacto → entorno → respuesta → medida de la respuesta**) y se prioriza con una tupla **(importancia para el stakeholder, dificultad técnica de implementación)** usando la escala **A** (Alta), **M** (Media) y **B** (Baja).
 
-| ID | Atributo | Escenario | Medida | Táctica aplicada |
-|----|----------|-----------|--------|------------------|
-| RNF-01 | Disponibilidad | Un contenedor de un microservicio se detiene inesperadamente. | Docker lo reinicia en menos de 30 s; el ALB deja de enviarle tráfico mientras su *health check* falla. | Política `restart: unless-stopped`, *health checks* en ALB y en contenedores. |
-| RNF-02 | Rendimiento | Un cliente busca un libro con 50 usuarios concurrentes. | El percentil 95 de respuesta es menor a 500 ms. | Índices de búsqueda en PostgreSQL, paginación obligatoria, conexiones persistentes del gateway a los servicios, compresión gzip en Nginx. |
-| RNF-03 | Escalabilidad | Aumenta el tráfico en el catálogo. | Se puede agregar otra instancia de Libros detrás del gateway sin cambiar código, y escalar RDS verticalmente. | Servicios sin estado, configuración por variables de entorno, base de datos gestionada. |
-| RNF-04 | Seguridad | Un usuario sin llave intenta crear un libro o una venta. | La API Gateway responde `401` y la petición nunca llega al microservicio. | Autenticación en el borde, grupos de seguridad que solo permiten tráfico interno a los microservicios, bases de datos en subred privada. |
-| RNF-05 | Consistencia | Dos ventas simultáneas compiten por la última unidad de un libro. | Solo una se registra; la otra recibe `409`. | Descuento atómico (`UPDATE ... WHERE existencias >= cantidad`) y compensación ante fallos. |
-| RNF-06 | Mantenibilidad | Se necesita cambiar la base de datos de un servicio. | El cambio se limita a la capa de acceso a datos de ese servicio. | Arquitectura por capas, base de datos por servicio, contratos OpenAPI. |
-| RNF-07 | Portabilidad / reproducibilidad | Se necesita recrear el entorno desde cero. | `terraform apply` + `ansible-playbook` levantan todo sin pasos manuales en menos de 30 min. | Infraestructura como código, imágenes Docker versionadas en ECR. |
-| RNF-08 | Observabilidad | Un error ocurre en una petición que pasa por varios servicios. | Se puede rastrear con un único identificador en los logs de todos los servicios. | Encabezado `X-Request-Id` propagado por el gateway, logs estructurados en JSON. |
+| ID | Atributo | Fuente de estímulo | Estímulo | Artefacto | Entorno | Respuesta | Medida de la respuesta | Prioridad | Táctica aplicada |
+|----|----------|--------------------|----------|-----------|---------|-----------|------------------------|:---------:|------------------|
+| RNF-01 | Disponibilidad | Contenedor o proceso Node.js | Un contenedor de un microservicio se detiene inesperadamente. | Contenedor Docker / ALB | Operación normal en AWS | Docker reinicia el contenedor automáticamente y el ALB deja de enviarle tráfico mientras falla `/health`. | Recuperación del contenedor en `< 30 s`; disponibilidad general `≥ 99 %`. | (A, M) | Política `restart: unless-stopped`, *health checks* en ALB y en contenedores. |
+| RNF-02 | Rendimiento (Latencia) | Clientes concurrentes | Búsqueda de libros por título/autor o consulta del ranking de más vendidos. | API Gateway, Libros, Ventas y RDS | Carga normal (50 usuarios concurrentes) | Los servicios procesan la consulta paginada usando índices GIN (`pg_trgm`) y de fecha en PostgreSQL. | Percentil 95 (`p95`) de tiempo de respuesta `< 500 ms`. | (A, A) | Índices `pg_trgm` con `unaccent`, paginación obligatoria, compresión gzip en Nginx. |
+| RNF-03 | Escalabilidad | Incremento de usuarios | Aumenta el tráfico de consultas al catálogo o registro de ventas. | Instancias EC2 y Amazon RDS | Pico de demanda | Se agregan instancias detrás del ALB/Gateway sin modificar código y se escala RDS verticalmente. | Cero cambios en código fuente (`0 líneas`) para escalar horizontal o verticalmente. | (M, M) | Servicios *stateless*, configuración por variables de entorno ([12-Factor](https://12factor.net/es/config)), RDS gestionado. |
+| RNF-04 | Seguridad | Usuario externo no autorizado | Intento de crear/editar/eliminar libros (`POST/PUT/DELETE`) o acceder a `/internal/v1/*` o a RDS. | API Gateway, Security Groups y subredes privadas | Operación expuesta en Internet | La API Gateway rechaza peticiones sin `X-Api-Key` válida o dirigidas a `/internal/*`; AWS bloquea tráfico directo a RDS. | `100 %` de intentos no autorizados rechazados con `401`/`403` en `< 10 ms`; `0` puertos de BD públicos. | (A, A) | Autenticación en el borde, bloqueo de rutas internas, grupos de seguridad encadenados y RDS en subred privada. |
+| RNF-05 | Consistencia / Integridad | Dos administradores simultáneos | Dos ventas concurrentes compiten por la última unidad disponible de un libro. | Microservicio de Ventas, Microservicio de Libros y `libros_db` | Operación concurrente | Libros ejecuta descuento atómico en SQL y Ventas aplica compensación si falla la escritura local. | `0` libros con existencias negativas (`CHECK >= 0`); exactamente una venta recibe `201` y la otra `409`. | (A, A) | `UPDATE ... WHERE existencias >= $2` y saga orquestada con compensación (`POST .../reponer`). |
+| RNF-06 | Mantenibilidad | Equipo de desarrollo | Cambio en el esquema de persistencia o en una regla de negocio de un microservicio. | Capas `repositories` / `services` del microservicio | Desarrollo y mantenimiento | El cambio queda aislado dentro de la capa correspondiente de ese único microservicio sin afectar al otro. | Cambio confinado a `1` microservicio y `≤ 2` archivos de su capa interna; pruebas en verde. | (A, B) | Arquitectura por capas dentro de cada microservicio, base de datos por servicio y contratos OpenAPI 3.0. |
+| RNF-07 | Portabilidad / Reproducibilidad | Operador de infraestructura | Recreación completa del entorno de nube desde cero en una cuenta o región limpia. | Módulos Terraform, playbooks Ansible e imágenes en ECR | Aprovisionamiento y despliegue | `terraform apply` crea toda la red, VMs, ALB, RDS y ECR; `ansible-playbook` instala Docker y despliega los contenedores. | Entorno completo operativo y verificado con `/health` en `< 30 min` con `0` pasos manuales en consola. | (A, A) | Infraestructura como código (Terraform) + gestión de configuración (Ansible) + contenedores Docker. |
+| RNF-08 | Observabilidad | Operador / Desarrollador | Ocurre un error en una petición que atraviesa API Gateway, Ventas y Libros. | Logs de contenedores | Diagnóstico de fallos | El gateway propaga `X-Request-Id` a los microservicios y todos registran eventos estructurados en JSON. | `100 %` de las respuestas de error y líneas de log incluyen el mismo `requestId` correlacionado. | (M, B) | Middleware `requestId`, propagación de cabeceras HTTP y logs estructurados en JSON. |
 
 ## 9. Drivers de restricción
 
-| ID | Restricción | Origen |
-|----|-------------|--------|
-| RES-01 | Patrón de microservicios sobre arquitectura por capas, con dos servicios: Libros y Ventas. | Enunciado |
-| RES-02 | API Gateway como punto de entrada único. | Enunciado |
-| RES-03 | Infraestructura definida con Terraform: red, máquinas virtuales, IP públicas estáticas, balanceador y bases de datos gestionadas. | Enunciado |
-| RES-04 | Configuración de sistema operativo, instalación de Docker Engine y despliegue con Ansible. | Enunciado |
-| RES-05 | Todos los componentes en contenedores Docker publicados en un registro en la nube. | Enunciado |
-| RES-06 | Nube pública: AWS. | Decisión del equipo |
-| RES-07 | Una base de datos independiente por microservicio. | Enunciado / patrón |
-| RES-08 | Documentación en Markdown dentro del repositorio. | Enunciado |
-| RES-09 | Fecha de entrega: 22 de octubre de 2026. | Cronograma |
+Las restricciones se clasifican según su origen en restricciones **del cliente / enunciado** y restricciones **de la organización de desarrollo (Grupo 4)**:
+
+### 9.1 Restricciones del cliente (enunciado y curso)
+
+| ID | Restricción | Detalle |
+|----|-------------|---------|
+| RES-01 | Estilo arquitectónico híbrido | Patrón de microservicios sobre arquitectura por capas, con al menos dos microservicios independientes: **Libros** y **Ventas**. |
+| RES-02 | Punto de entrada único | Uso obligatorio de una **API Gateway** como punto de entrada para el frontend. |
+| RES-03 | Aprovisionamiento con Terraform | Red (VPC y subredes), máquinas virtuales, IPs públicas estáticas, balanceador de carga y bases de datos gestionadas deben crearse con **Terraform**. |
+| RES-04 | Configuración y despliegue con Ansible | Configuración de sistema operativo, instalación de Docker Engine y despliegue de contenedores deben automatizarse con **Ansible**. |
+| RES-05 | Contenedorización completa | Todos los componentes (Frontend, API Gateway, Libros y Ventas) deben empaquetarse en contenedores **Docker** publicados en un registro en la nube. |
+| RES-07 | Base de datos por microservicio | Cada microservicio debe contar con su propia base de datos gestionada independiente en la nube. |
+| RES-08 | Documentación en el repositorio | Toda la documentación técnica, arquitectónica y manuales deben entregarse en formato Markdown dentro del repositorio oficial. |
+| RES-09 | Plazo de entrega | Fecha límite de entrega y evaluación: **22 de octubre de 2026**. |
+
+### 9.2 Restricciones de la organización de desarrollo (Grupo 4)
+
+| ID | Restricción | Detalle |
+|----|-------------|---------|
+| RES-06 | Proveedor de nube pública | Selección de **Amazon Web Services (AWS)** en la región `us-east-1` (EC2, ALB, RDS PostgreSQL 16, ECR, CloudFront). |
+| RES-10 | Homogeneidad tecnológica | Estandarización en **Node.js 22 LTS + Express** para API Gateway y microservicios, **React 18 + Vite** para el frontend y **PostgreSQL 16** para persistencia. |
+| RES-11 | Presupuesto de capa gratuita / estudiantil | Uso de instancias `t3.micro` (EC2) y `db.t3.micro` (RDS) para acotar costos operativos durante el laboratorio. |
 
 ## 10. Matrices de trazabilidad
 
-### 10.1 Casos de uso ↔ requisitos funcionales
+### 10.1 Stakeholders ↔ vistas y perspectivas de arquitectura
+
+Notación según la guía de arquitectura: **`d`** = información detallada, **`m`** = información moderada / general, **`p`** = panorama (vista de alto nivel).
+
+| Stakeholder \ Vista | Contexto y CUN | Casos de uso (CDU) | Vista lógica (Bloques y Capas) | Vista de componentes | Vista de datos (Persistencia) | Vista de despliegue y distribución |
+|---------------------|:--------------:|:------------------:|:------------------------------:|:--------------------:|:-----------------------------:|:----------------------------------:|
+| Gerencia de la librería | d | m | p | p | p | p |
+| Personal administrativo | d | d | p | p | p | p |
+| Clientes | m | d | p | p | p | p |
+| Equipo de desarrollo y operaciones (Grupo 4) | d | d | d | d | d | d |
+| Auxiliar y catedrática del curso | d | d | d | d | d | d |
+
+### 10.2 Casos de uso ↔ requisitos funcionales
 
 | CU \ RF | RF-01 | RF-02 | RF-03 | RF-04 | RF-05 | RF-06 | RF-07 | RF-08 | RF-09 | RF-10 | RF-11 |
 |---------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
@@ -344,7 +387,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | CU-08 | | | | | | | ● | ● | | | |
 | CU-09 | | | | | | | | | | | ● |
 
-### 10.2 Requisitos ↔ componentes
+### 10.3 Requisitos ↔ componentes
 
 | Requisito | Frontend | API Gateway | Libros | Ventas | RDS | Terraform | Ansible |
 |-----------|:--------:|:-----------:|:------:|:------:|:---:|:---------:|:-------:|
@@ -358,7 +401,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | RNF-07 | | | | | | ● | ● |
 | RNF-08 | | ● | ● | ● | | | |
 
-### 10.3 Casos de uso del negocio ↔ casos de uso del sistema
+### 10.4 Casos de uso del negocio ↔ casos de uso del sistema
 
 | CUN \ CU | CU-01 | CU-02 | CU-03 | CU-04 | CU-05 | CU-06 | CU-07 | CU-08 | CU-09 |
 |----------|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|:-----:|
@@ -367,7 +410,7 @@ Cada atributo se expresa como un escenario: **estímulo → respuesta → medida
 | CUN-03 Abastecer catálogo | | | | | ● | ● | ● | | |
 | CUN-04 Analizar más vendidos | | | | ● | | | | | |
 
-### 10.4 Componentes ↔ responsables
+### 10.5 Componentes ↔ responsables
 
 | Componente | Responsable | Carnet |
 |------------|-------------|--------|

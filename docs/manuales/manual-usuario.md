@@ -2,7 +2,7 @@
 
 Responsable: **Kevin Mark Hernández Chicol** (202001053)
 
-> Las capturas se tomaron del sistema en ejecución con los datos semilla (versión 0.2.0).
+> Las capturas se tomaron del sistema en ejecución con los datos semilla (versión 1.0.0).
 
 ## 1. Introducción y requisitos
 
